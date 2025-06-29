@@ -6,10 +6,6 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.2.1",
-    "fastapi>=0.115.14",
-    "fastmcp>=2.9.2",
-    "playwright>=1.53.0",
     "pytest>=8.4.1",
     "streamlit>=1.46.1",
-    "uvicorn>=0.34.3",
 ]
