@@ -1,11 +1,11 @@
 """
-Integration tests for simplified CLI functionality
+Integration tests for CLI functionality
 """
 import pytest
 import subprocess
 import sys
 from click.testing import CliRunner
-from main import cli
+from examples.cli import cli
 
 
 class TestDashboardCommand:
@@ -17,7 +17,7 @@ class TestDashboardCommand:
         result = runner.invoke(cli, ['dashboard', '--help'])
         
         assert result.exit_code == 0
-        assert "Launch the Streamlit dashboard" in result.output
+        assert "Launch the interactive Streamlit dashboard" in result.output
 
 
 
@@ -27,10 +27,10 @@ class TestCLIExecution:
     
     @pytest.mark.integration
     @pytest.mark.slow
-    def test_main_script_help(self):
-        """Test that main.py can show help"""
+    def test_cli_script_help(self):
+        """Test that examples/cli.py can show help"""
         result = subprocess.run(
-            ["uv", "run", "main.py", "--help"],
+            ["uv", "run", "python", "examples/cli.py", "--help"],
             capture_output=True,
             text=True,
             timeout=10

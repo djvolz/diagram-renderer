@@ -156,7 +156,7 @@ class TestDashboardStartup:
         try:
             # Start dashboard in background
             process = subprocess.Popen(
-                ["uv", "run", "main.py", "dashboard"],
+                ["uv", "run", "python", "examples/cli.py", "dashboard"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid if hasattr(os, 'setsid') else None

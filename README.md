@@ -21,14 +21,28 @@ uv install
 
 ## Usage
 
-### Streamlit Dashboard
+### Examples
 
-Launch the interactive dashboard:
+The `examples/` directory contains two demonstration applications:
 
+**Streamlit Dashboard** - Interactive web interface:
 ```bash
-uv run main.py
+uv run python examples/cli.py dashboard
 # or directly:
-uv run streamlit run dashboard.py
+uv run streamlit run examples/dashboard.py
+```
+
+**Command Line Interface** - Batch processing and automation:
+```bash
+# Render diagram from file
+uv run python examples/cli.py render diagram.mmd
+
+# Quick inline rendering
+uv run python examples/cli.py quick "graph TD; A-->B"
+
+# Show examples and help
+uv run python examples/cli.py examples
+uv run python examples/cli.py --help
 ```
 
 ## Supported Diagram Types
@@ -61,11 +75,11 @@ uv run streamlit run dashboard.py
 
 The main components are:
 
-- `diagram/` - Core diagram rendering logic
-- `dashboard.py` - Streamlit web interface
-- `main.py` - Main entry point for dashboard
+- `diagram/` - Core diagram rendering logic and renderers
 - `st_diagram.py` - Streamlit diagram component wrapper
-- `diagram/renderers/static/js/` - Static JavaScript assets
+- `examples/cli.py` - Command-line interface and dashboard launcher
+- `examples/dashboard.py` - Streamlit web interface
+- `diagram/renderers/static/js/` - Static JavaScript assets (Mermaid.js, VizJS)
 
 ## Examples
 
