@@ -51,48 +51,71 @@ class DiagramRenderer:
         return None  # Return None if no specific type is detected
 
     def render_diagram_auto(self, code):
-        """Automatically detect diagram type and render accordingly"""
+        """
+        Automatically detect diagram type and render accordingly.
         
+        Supports multiple diagrams in a single input by extracting markdown code blocks
+        and rendering each one individually.
+        
+        Args:
+            code (str): Input code that may contain one or more diagram definitions
+        
+        Returns:
+            str: Combined HTML output for all detected diagrams, or empty string if none found
+        """
         # Extract all potential code blocks
         all_extracted_codes = self._extract_all_code_blocks(code, ["mermaid", "plantuml", "uml", "dot", "graphviz"])
-        
-        rendered_html_parts = []
         
         if not all_extracted_codes:
             # If no code blocks are found, try to process the entire input as a single diagram
             all_extracted_codes = [code]
 
+        # Render each code block individually
+        rendered_html_parts = []
         for code_to_process in all_extracted_codes:
             if not code_to_process.strip():
                 continue
-            rendered_html_parts.append(self._render_single_diagram(code_to_process))
-
-        # Filter out any None values that might have been returned by _render_single_diagram
-        rendered_html_parts = [part for part in rendered_html_parts if part is not None]
+            
+            rendered_html = self._render_single_diagram(code_to_process)
+            if rendered_html:  # Only add non-empty results
+                rendered_html_parts.append(rendered_html)
 
         if rendered_html_parts:
             # Combine all rendered HTML parts into a single HTML string
-            # This might need more sophisticated handling for proper display in Streamlit
-            result = "\n".join(rendered_html_parts)
-            return result
+            return "\n".join(rendered_html_parts)
         else:
-            return ""
+            return None  # Return None to indicate no diagrams were successfully rendered
 
     def _render_single_diagram(self, code_to_process):
-        """Renders a single diagram code block."""
-        detected_renderer = None
-        for name, renderer in self.renderers:
-            if renderer.detect_diagram_type(code_to_process):
-                detected_renderer = renderer
-                break
+        """
+        Renders a single diagram code block using the appropriate renderer.
         
-        if detected_renderer:
-            final_cleaned_code = detected_renderer.clean_code(code_to_process)
-            rendered_html = detected_renderer.render_html(final_cleaned_code)
-            return rendered_html
-        else:
-            # If no specific type is detected for a block, try to render as mermaid as a last resort
-            mermaid_renderer = self.renderers[-1][1] # Last one is mermaid
-            final_cleaned_code = mermaid_renderer.clean_code(code_to_process)
-            rendered_html = mermaid_renderer.render_html(final_cleaned_code)
-            return rendered_html
+        Args:
+            code_to_process (str): The diagram code to render
+            
+        Returns:
+            str: Rendered HTML content, or None if rendering fails
+        """
+        try:
+            # Attempt to detect the appropriate renderer
+            detected_renderer = None
+            for name, renderer in self.renderers:
+                if renderer.detect_diagram_type(code_to_process):
+                    detected_renderer = renderer
+                    break
+            
+            if detected_renderer:
+                # Use the detected renderer
+                final_cleaned_code = detected_renderer.clean_code(code_to_process)
+                return detected_renderer.render_html(final_cleaned_code)
+            else:
+                # If no specific type is detected, try to render as mermaid as a last resort
+                # Mermaid is the last renderer in our list and most flexible
+                mermaid_renderer = self.renderers[-1][1]  # Last one is mermaid
+                final_cleaned_code = mermaid_renderer.clean_code(code_to_process)
+                return mermaid_renderer.render_html(final_cleaned_code)
+                
+        except Exception as e:
+            # Log the error but don't crash the entire rendering process
+            print(f"Warning: Failed to render diagram: {str(e)}")
+            return None

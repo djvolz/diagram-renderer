@@ -166,8 +166,8 @@ class TestDiagramRendererIntegration:
 class TestDiagramRendererErrorHandling:
     """Test error handling in DiagramRenderer"""
     
-    def test_renderer_exception_propagation(self, diagram_renderer, sample_mermaid_flowchart, monkeypatch):
-        """Test that renderer exceptions are properly propagated"""
+    def test_renderer_exception_handling(self, diagram_renderer, sample_mermaid_flowchart, monkeypatch, capsys):
+        """Test that renderer exceptions are gracefully handled without crashing"""
         # Mock renderer to raise an exception
         def mock_render_error(code, **kwargs):
             raise Exception("Mock renderer error")
@@ -175,8 +175,13 @@ class TestDiagramRendererErrorHandling:
         mermaid_renderer_instance = diagram_renderer.renderers[2][1]
         monkeypatch.setattr(mermaid_renderer_instance, 'render_html', mock_render_error)
         
-        with pytest.raises(Exception, match="Mock renderer error"):
-            diagram_renderer.render_diagram_auto(sample_mermaid_flowchart)
+        # The renderer should handle the exception gracefully and return None
+        result = diagram_renderer.render_diagram_auto(sample_mermaid_flowchart)
+        assert result is None
+        
+        # Check that the error was logged
+        captured = capsys.readouterr()
+        assert "Warning: Failed to render diagram: Mock renderer error" in captured.out
     
     def test_empty_code_handling(self, diagram_renderer):
         """Test handling of empty or whitespace-only code"""
