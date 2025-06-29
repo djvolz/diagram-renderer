@@ -1,7 +1,7 @@
 [project]
 name = "diagram-render"
 version = "0.1.0"
-description = "Add your description here"
+description = "A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Graphviz diagrams with interactive zoom/pan controls and PNG export"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
