@@ -9,7 +9,7 @@ Ask us to verify the commit message first before actually committing.
 - Fixed: Double check the mermaid js and viz js libraries work entirely offline and do not call out to the wider web ✅ (Verified: All JS libraries are self-contained with no external network calls)
 - Fixed: Update pyproject.toml description ✅
 - Fixed: Remove unused pyproject dependencies ✅ (Removed fastapi, fastmcp, playwright, uvicorn - kept click, pytest, streamlit)
-- Fix: Mermaid diagram button sometimes works and sometimes doesn't. Especially the first click. Download mermaid fails, switch to PlantUML and download succeeds, switch to a different mermaid and download also succeeds
+- Fixed: Mermaid diagram button sometimes works and sometimes doesn't. Especially the first click. Download mermaid fails, switch to PlantUML and download succeeds, switch to a different mermaid and download also succeeds ✅ (Fixed timing issue: Added diagramReady state tracking and disabled download button until rendering completes)
 
 ## Enhancements
 

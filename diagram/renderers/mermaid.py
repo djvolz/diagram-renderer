@@ -104,6 +104,14 @@ class MermaidRenderer(BaseRenderer):
         .zoom-btn:hover {{
             background: #0056b3;
         }}
+        .zoom-btn:disabled {{
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }}
+        .zoom-btn:disabled:hover {{
+            background: #ccc;
+        }}
         .zoom-level {{
             font-size: 11px;
             text-align: center;
@@ -143,7 +151,7 @@ class MermaidRenderer(BaseRenderer):
             <div class="zoom-level" id="zoom-level">100%</div>
             <button class="zoom-btn" onclick="zoomOut()">−</button>
             <button class="zoom-btn" onclick="resetZoom()" title="Reset">⌂</button>
-            <button class="zoom-btn" onclick="downloadPNG()" title="Download PNG">📥</button>
+            <button class="zoom-btn" id="download-btn" onclick="downloadPNG()" title="Loading diagram..." disabled>📥</button>
         </div>
         <div class="mermaid-container" id="mermaid-container">
             <div class="mermaid">
@@ -161,6 +169,7 @@ class MermaidRenderer(BaseRenderer):
         let isDragging = false;
         let lastMouseX = 0;
         let lastMouseY = 0;
+        let diagramReady = false;
         
         function updateTransform() {{
             mermaidContainer.style.transform = `translate(${{currentPanX}}px, ${{currentPanY}}px) scale(${{currentZoom}})`;
@@ -185,6 +194,11 @@ class MermaidRenderer(BaseRenderer):
         }}
         
         function downloadPNG() {{
+            if (!diagramReady) {{
+                alert('Diagram is still loading. Please wait a moment and try again.');
+                return;
+            }}
+            
             const svgElement = mermaidContainer.querySelector('svg');
             if (!svgElement) {{
                 alert('No diagram to download');
@@ -295,15 +309,39 @@ class MermaidRenderer(BaseRenderer):
                 
                 // Find all mermaid elements and render them
                 const mermaidElements = document.querySelectorAll('.mermaid');
+                let renderPromises = [];
+                
                 mermaidElements.forEach(async (element, index) => {{
-                    try {{
-                        const id = 'mermaid-' + index;
-                        const {{svg}} = await mermaid.render(id, element.textContent);
-                        element.innerHTML = svg;
-                        updateTransform();
-                    }} catch (error) {{
-                        console.error('Mermaid rendering error:', error);
-                        element.innerHTML = '<div style="color: red; padding: 20px; border: 1px solid red; background-color: #ffe6e6;">Error rendering diagram: ' + error.message + '</div>';
+                    const renderPromise = (async () => {{
+                        try {{
+                            const id = 'mermaid-' + index;
+                            const {{svg}} = await mermaid.render(id, element.textContent);
+                            element.innerHTML = svg;
+                            updateTransform();
+                        }} catch (error) {{
+                            console.error('Mermaid rendering error:', error);
+                            element.innerHTML = '<div style="color: red; padding: 20px; border: 1px solid red; background-color: #ffe6e6;">Error rendering diagram: ' + error.message + '</div>';
+                        }}
+                    }})();
+                    renderPromises.push(renderPromise);
+                }});
+                
+                // Wait for all diagrams to finish rendering
+                Promise.all(renderPromises).then(() => {{
+                    diagramReady = true;
+                    const downloadBtn = document.getElementById('download-btn');
+                    if (downloadBtn) {{
+                        downloadBtn.disabled = false;
+                        downloadBtn.title = 'Download PNG';
+                    }}
+                    console.log('All Mermaid diagrams rendered successfully');
+                }}).catch((error) => {{
+                    console.error('Error during Mermaid rendering:', error);
+                    diagramReady = true; // Still allow downloads even if some failed
+                    const downloadBtn = document.getElementById('download-btn');
+                    if (downloadBtn) {{
+                        downloadBtn.disabled = false;
+                        downloadBtn.title = 'Download PNG';
                     }}
                 }});
             }} catch (error) {{
