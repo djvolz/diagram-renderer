@@ -274,55 +274,43 @@ class MermaidRenderer(BaseRenderer):
         }});
         
         // Initialize Mermaid with error handling
-        // Function to initialize and render Mermaid
-        async function initializeAndRenderMermaid() {
-            try {
-                // Ensure mermaid is defined before initializing
-                if (typeof mermaid === 'undefined') {
-                    console.error('Mermaid library not loaded.');
-                    document.querySelector('.mermaid').innerHTML = '<div style="color: red; padding: 20px;">Error: Mermaid library not loaded.</div>';
-                    return;
-                }
-
-                mermaid.initialize({
+        document.addEventListener('DOMContentLoaded', function() {{
+            try {{
+                mermaid.initialize({{
                     startOnLoad: false,
                     theme: 'default',
                     securityLevel: 'loose',
                     fontFamily: 'Arial, sans-serif',
-                    flowchart: {
+                    flowchart: {{
                         useMaxWidth: true,
                         htmlLabels: true
-                    },
-                    sequence: {
+                    }},
+                    sequence: {{
                         useMaxWidth: true
-                    },
-                    gantt: {
+                    }},
+                    gantt: {{
                         useMaxWidth: true
-                    }
-                });
+                    }}
+                }});
                 
                 // Find all mermaid elements and render them
                 const mermaidElements = document.querySelectorAll('.mermaid');
-                for (const element of mermaidElements) {
-                    try {
-                        const id = 'mermaid-' + Math.random().toString(36).substr(2, 9); // Unique ID for each diagram
-                        const { svg } = await mermaid.render(id, element.textContent);
+                mermaidElements.forEach(async (element, index) => {{
+                    try {{
+                        const id = 'mermaid-' + index;
+                        const {{svg}} = await mermaid.render(id, element.textContent);
                         element.innerHTML = svg;
-                        updateTransform(); // Update transform after rendering
-                    } catch (error) {
+                        updateTransform();
+                    }} catch (error) {{
                         console.error('Mermaid rendering error:', error);
                         element.innerHTML = '<div style="color: red; padding: 20px; border: 1px solid red; background-color: #ffe6e6;">Error rendering diagram: ' + error.message + '</div>';
-                    }
-                }
-            } catch (error) {
+                    }}
+                }});
+            }} catch (error) {{
                 console.error('Mermaid initialization error:', error);
                 document.querySelector('.mermaid').innerHTML = '<div style="color: red; padding: 20px;">Failed to initialize Mermaid: ' + error.message + '</div>';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeAndRenderMermaid();
-        });
+            }}
+        }});
     </script>
 </body>
 </html>
