@@ -38,10 +38,15 @@ class BaseRenderer(ABC):
 
     
 
-    def _render_vizjs_html(self, dot_code):
+    def _render_vizjs_html(self, dot_code, original_code=None):
         """Generate HTML with VizJS to render DOT notation as SVG"""
         # Use JSON.stringify equivalent escaping to safely embed DOT code
         escaped_dot = json.dumps(dot_code)
+        
+        # If no original code provided, use the dot code
+        if original_code is None:
+            original_code = dot_code
+        escaped_original = json.dumps(original_code)
         
         # Get VizJS content from local file
         viz_js_content = self.get_static_js_content("viz-lite.js") + "\n" + self.get_static_js_content("viz-full.js")
@@ -153,6 +158,7 @@ class BaseRenderer(ABC):
             <button class="zoom-btn" onclick="zoomOut()">−</button>
             <button class="zoom-btn" onclick="resetZoom()" title="Reset">⌂</button>
             <button class="zoom-btn" onclick="downloadPNG()" title="Download PNG">📥</button>
+            <button class="zoom-btn" onclick="downloadCode()" title="Download Source Code">📄</button>
         </div>
         <div id="graph" class="loading">Rendering diagram...</div>
     </div>
@@ -246,6 +252,16 @@ class BaseRenderer(ABC):
                 URL.revokeObjectURL(url);
             }};
             img.src = url;
+        }}
+        
+        function downloadCode() {{
+            const originalCode = {escaped_original};
+            const blob = new Blob([originalCode], {{ type: 'text/plain' }});
+            const link = document.createElement('a');
+            link.download = 'diagram-source.txt';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
         }}
         
         // Mouse wheel zoom

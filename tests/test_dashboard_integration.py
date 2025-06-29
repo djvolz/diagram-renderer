@@ -26,18 +26,35 @@ class TestDashboardIntegration:
     def test_dashboard_command_help(self):
         """Test that dashboard command shows help"""
         from click.testing import CliRunner
-        from main import dashboard
+        import sys
+        from pathlib import Path
         
-        runner = CliRunner()
-        result = runner.invoke(dashboard, ['--help'])
+        # Add examples directory to path
+        examples_dir = Path(__file__).parent.parent / "examples"
+        sys.path.insert(0, str(examples_dir))
         
-        assert result.exit_code == 0
-        assert "Launch the Streamlit dashboard" in result.output
+        try:
+            from cli import dashboard
+            
+            runner = CliRunner()
+            result = runner.invoke(dashboard, ['--help'])
+            
+            assert result.exit_code == 0
+            assert "Launch the interactive Streamlit dashboard" in result.output
+        finally:
+            sys.path.remove(str(examples_dir))
     
     @pytest.mark.integration
     @pytest.mark.slow
     def test_dashboard_imports(self):
         """Test that dashboard.py can be imported without errors"""
+        import sys
+        from pathlib import Path
+        
+        # Add examples directory to path
+        examples_dir = Path(__file__).parent.parent / "examples"
+        sys.path.insert(0, str(examples_dir))
+        
         try:
             import dashboard
             # If we get here, imports worked
@@ -51,6 +68,8 @@ class TestDashboardIntegration:
                 pytest.skip("Streamlit not in test mode")
             else:
                 pytest.fail(f"Dashboard import failed with unexpected error: {e}")
+        finally:
+            sys.path.remove(str(examples_dir))
     
     @pytest.mark.integration
     @pytest.mark.slow

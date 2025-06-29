@@ -69,6 +69,6 @@ class GraphvizRenderer(BaseRenderer):
         
         try:
             clean_dot = self.clean_code(code)
-            return self._render_vizjs_html(clean_dot)
+            return self._render_vizjs_html(clean_dot, original_code=code)
         except Exception as e:
             raise Exception(f"Error rendering Graphviz diagram: {str(e)}")

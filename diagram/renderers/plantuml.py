@@ -138,6 +138,6 @@ class PlantUMLRenderer(BaseRenderer):
 
         try:
             dot_code = self.convert_plantuml_to_dot(code)
-            return self._render_vizjs_html(dot_code)
+            return self._render_vizjs_html(dot_code, original_code=code)
         except Exception as e:
             raise Exception(f"Error rendering PlantUML diagram: {str(e)}")

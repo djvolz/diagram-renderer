@@ -48,6 +48,10 @@ class MermaidRenderer(BaseRenderer):
         # Clean mermaid code
         clean_code = self.clean_code(code)
         
+        # Escape original code for JavaScript
+        import json
+        escaped_original = json.dumps(code)
+        
         html_template = f"""
 <!DOCTYPE html>
 <html>
@@ -152,6 +156,7 @@ class MermaidRenderer(BaseRenderer):
             <button class="zoom-btn" onclick="zoomOut()">−</button>
             <button class="zoom-btn" onclick="resetZoom()" title="Reset">⌂</button>
             <button class="zoom-btn" id="download-btn" onclick="downloadPNG()" title="Loading diagram..." disabled>📥</button>
+            <button class="zoom-btn" onclick="downloadCode()" title="Download Source Code">📄</button>
         </div>
         <div class="mermaid-container" id="mermaid-container">
             <div class="mermaid">
@@ -253,6 +258,16 @@ class MermaidRenderer(BaseRenderer):
                 URL.revokeObjectURL(url);
             }};
             img.src = url;
+        }}
+        
+        function downloadCode() {{
+            const originalCode = {escaped_original};
+            const blob = new Blob([originalCode], {{ type: 'text/plain' }});
+            const link = document.createElement('a');
+            link.download = 'mermaid-diagram.mmd';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
         }}
         
         // Mouse wheel zoom
