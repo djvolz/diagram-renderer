@@ -270,13 +270,6 @@ class BaseRenderer(ABC):
             URL.revokeObjectURL(link.href);
         }}
         
-        // Mouse wheel zoom
-        document.addEventListener('wheel', function(e) {{
-            e.preventDefault();
-            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-            currentZoom = Math.max(0.1, Math.min(3.0, currentZoom * zoomFactor));
-            updateTransform();
-        }});
         
         // Mouse drag pan
         graphDiv.addEventListener('mousedown', function(e) {{
