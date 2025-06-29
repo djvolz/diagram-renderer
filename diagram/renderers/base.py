@@ -224,10 +224,16 @@ class BaseRenderer(ABC):
             canvas.height = height * 2;
             ctx.scale(2, 2);
             
-            // Convert SVG to data URL
-            const svgData = new XMLSerializer().serializeToString(svgClone);
-            const svgBlob = new Blob([svgData], {{type: 'image/svg+xml;charset=utf-8'}});
-            const url = URL.createObjectURL(svgBlob);
+            // Convert SVG to data URL (avoids CORS issues with blob URLs)
+            let svgData = new XMLSerializer().serializeToString(svgClone);
+            
+            // Ensure SVG has proper namespace
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {{
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }}
+            
+            // Use data URL instead of blob URL to avoid CORS issues
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
             
             // Create image and draw to canvas
             const img = new Image();
@@ -236,22 +242,22 @@ class BaseRenderer(ABC):
                 ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Download the PNG
-                canvas.toBlob(function(blob) {{
+                // Download the PNG using toDataURL (avoids tainted canvas issues)
+                try {{
+                    const pngDataUrl = canvas.toDataURL('image/png');
                     const link = document.createElement('a');
                     link.download = 'diagram.png';
-                    link.href = URL.createObjectURL(blob);
+                    link.href = pngDataUrl;
                     link.click();
-                    URL.revokeObjectURL(link.href);
-                }}, 'image/png');
-                
-                URL.revokeObjectURL(url);
+                }} catch (error) {{
+                    console.error('Failed to create PNG:', error);
+                    alert('Failed to create PNG. Security restrictions may prevent export.');
+                }}
             }};
             img.onerror = function() {{
                 alert('Failed to generate PNG. Please try again.');
-                URL.revokeObjectURL(url);
             }};
-            img.src = url;
+            img.src = dataUrl;
         }}
         
         function downloadCode() {{

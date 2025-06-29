@@ -176,6 +176,32 @@ class MermaidRenderer(BaseRenderer):
         let lastMouseY = 0;
         let diagramReady = false;
         
+        function isSVGReady(svgElement) {{
+            try {{
+                const bbox = svgElement.getBBox();
+                return bbox.width > 0 && bbox.height > 0;
+            }} catch (e) {{
+                return false;
+            }}
+        }}
+        
+        function waitForSVGReady(callback, maxAttempts = 20) {{
+            let attempts = 0;
+            const checkReady = () => {{
+                const svgElement = mermaidContainer.querySelector('svg');
+                if (svgElement && isSVGReady(svgElement)) {{
+                    callback();
+                }} else if (attempts < maxAttempts) {{
+                    attempts++;
+                    setTimeout(checkReady, 100);
+                }} else {{
+                    console.warn('SVG took longer than expected to become ready');
+                    callback(); // Still enable download, but with warning
+                }}
+            }};
+            checkReady();
+        }}
+        
         function updateTransform() {{
             mermaidContainer.style.transform = `translate(${{currentPanX}}px, ${{currentPanY}}px) scale(${{currentZoom}})`;
             zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
@@ -210,13 +236,32 @@ class MermaidRenderer(BaseRenderer):
                 return;
             }}
             
+            // Additional validation for SVG readiness
+            if (!isSVGReady(svgElement)) {{
+                alert('Diagram is still rendering. Please wait a moment and try again.');
+                return;
+            }}
+            
             // Clone the SVG to avoid modifying the original
             const svgClone = svgElement.cloneNode(true);
             
-            // Get SVG dimensions
-            const bbox = svgElement.getBBox();
-            const width = bbox.width || svgElement.clientWidth || 800;
-            const height = bbox.height || svgElement.clientHeight || 600;
+            // Get SVG dimensions with retry logic
+            let bbox, width, height;
+            try {{
+                bbox = svgElement.getBBox();
+                width = bbox.width || svgElement.clientWidth || 800;
+                height = bbox.height || svgElement.clientHeight || 600;
+            }} catch (error) {{
+                console.warn('getBBox failed, using fallback dimensions:', error);
+                width = svgElement.clientWidth || svgElement.offsetWidth || 800;
+                height = svgElement.clientHeight || svgElement.offsetHeight || 600;
+                bbox = {{ x: 0, y: 0, width: width, height: height }};
+            }}
+            
+            if (width <= 0 || height <= 0) {{
+                alert('Unable to determine diagram dimensions. Please try again in a moment.');
+                return;
+            }}
             
             // Set explicit dimensions on the clone
             svgClone.setAttribute('width', width);
@@ -230,34 +275,77 @@ class MermaidRenderer(BaseRenderer):
             canvas.height = height * 2;
             ctx.scale(2, 2);
             
-            // Convert SVG to data URL
-            const svgData = new XMLSerializer().serializeToString(svgClone);
-            const svgBlob = new Blob([svgData], {{type: 'image/svg+xml;charset=utf-8'}});
-            const url = URL.createObjectURL(svgBlob);
+            // Convert SVG to data URL with content cleaning
+            let svgData = new XMLSerializer().serializeToString(svgClone);
+            
+            // Clean up any problematic SVG content that prevents PNG conversion
+            // Remove foreign objects that contain HTML content
+            svgData = svgData.replace(/<foreignObject[^>]*>.*?<\\/foreignObject>/gi, '');
+            
+            // Remove any remaining HTML elements that might be embedded
+            svgData = svgData.replace(/<div[^>]*>.*?<\\/div>/gi, '');
+            svgData = svgData.replace(/<span[^>]*>.*?<\\/span>/gi, '');
+            svgData = svgData.replace(/<p[^>]*>.*?<\\/p>/gi, '');
+            
+            // Convert any remaining HTML entities that might cause issues
+            svgData = svgData.replace(/&nbsp;/g, ' ');
+            svgData = svgData.replace(/&amp;/g, '&');
+            svgData = svgData.replace(/&lt;/g, '<');
+            svgData = svgData.replace(/&gt;/g, '>');
+            
+            // Ensure SVG has proper namespace
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {{
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }}
+            
+            console.log('SVG data prepared, length:', svgData.length);
+            console.log('Full SVG content:', svgData);
+            
+            // Check for potentially problematic elements
+            const hasForeignObject = svgData.includes('foreignObject');
+            const hasHTMLContent = svgData.includes('<div') || svgData.includes('<span');
+            const hasUndefinedDimensions = !bbox || bbox.width === 0 || bbox.height === 0;
+            
+            console.log('SVG analysis:', {{
+                hasForeignObject: hasForeignObject,
+                hasHTMLContent: hasHTMLContent,
+                hasUndefinedDimensions: hasUndefinedDimensions,
+                width: width,
+                height: height
+            }});
+            
+            // Use data URL instead of blob URL to avoid CORS issues
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
             
             // Create image and draw to canvas
             const img = new Image();
             img.onload = function() {{
+                console.log('Image loaded successfully, dimensions:', img.width, 'x', img.height);
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Download the PNG
-                canvas.toBlob(function(blob) {{
+                // Download the PNG using toDataURL (avoids tainted canvas issues)
+                try {{
+                    const pngDataUrl = canvas.toDataURL('image/png');
+                    console.log('PNG data URL created successfully, length:', pngDataUrl.length);
+                    
                     const link = document.createElement('a');
                     link.download = 'mermaid-diagram.png';
-                    link.href = URL.createObjectURL(blob);
+                    link.href = pngDataUrl;
                     link.click();
-                    URL.revokeObjectURL(link.href);
-                }}, 'image/png');
-                
-                URL.revokeObjectURL(url);
+                }} catch (error) {{
+                    console.error('Failed to create PNG:', error);
+                    alert('Failed to create PNG. Security restrictions may prevent export.');
+                }}
             }};
-            img.onerror = function() {{
-                alert('Failed to generate PNG. Please try again.');
-                URL.revokeObjectURL(url);
+            img.onerror = function(e) {{
+                console.error('Image load error:', e);
+                console.error('SVG data length:', svgData.length);
+                alert('Failed to generate PNG. The SVG may contain unsupported elements.');
             }};
-            img.src = url;
+            console.log('Starting image load with data URL...');
+            img.src = dataUrl;
         }}
         
         function downloadCode() {{
@@ -343,21 +431,28 @@ class MermaidRenderer(BaseRenderer):
                 
                 // Wait for all diagrams to finish rendering
                 Promise.all(renderPromises).then(() => {{
-                    diagramReady = true;
-                    const downloadBtn = document.getElementById('download-btn');
-                    if (downloadBtn) {{
-                        downloadBtn.disabled = false;
-                        downloadBtn.title = 'Download PNG';
-                    }}
-                    console.log('All Mermaid diagrams rendered successfully');
+                    console.log('All Mermaid diagrams rendered, waiting for SVG layout...');
+                    // Wait for SVG to be fully ready before enabling downloads
+                    waitForSVGReady(() => {{
+                        diagramReady = true;
+                        const downloadBtn = document.getElementById('download-btn');
+                        if (downloadBtn) {{
+                            downloadBtn.disabled = false;
+                            downloadBtn.title = 'Download PNG';
+                        }}
+                        console.log('Mermaid diagram fully ready for download');
+                    }});
                 }}).catch((error) => {{
                     console.error('Error during Mermaid rendering:', error);
-                    diagramReady = true; // Still allow downloads even if some failed
-                    const downloadBtn = document.getElementById('download-btn');
-                    if (downloadBtn) {{
-                        downloadBtn.disabled = false;
-                        downloadBtn.title = 'Download PNG';
-                    }}
+                    // On error, still try to enable downloads after a delay
+                    setTimeout(() => {{
+                        diagramReady = true;
+                        const downloadBtn = document.getElementById('download-btn');
+                        if (downloadBtn) {{
+                            downloadBtn.disabled = false;
+                            downloadBtn.title = 'Download PNG (may have issues)';
+                        }}
+                    }}, 500);
                 }});
             }} catch (error) {{
                 console.error('Mermaid initialization error:', error);
