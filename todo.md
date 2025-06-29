@@ -1,11 +1,15 @@
 # TODO
 
+Instructions: Tackle each todo individually. Only tackle one todo item at a time.
+After each todo, generate a commit message using a special tool "explain diff".
+Ask us to verify the commit message first before actually committing.
+
 ## Bugs
 
-- Fix: Double check the mermaid js and viz js libraries work entirely offline and do not call out to the wider web
+- Fixed: Double check the mermaid js and viz js libraries work entirely offline and do not call out to the wider web ✅ (Verified: All JS libraries are self-contained with no external network calls)
 - Fix: Update pyproject.toml description
 - Fix: Remove unused pyproject dependencies
-- Fixed: Mermaid diagram button sometimes works and sometimes doesn't. Especially the first click. Download mermaid fails, switch to PlantUML and download succeeds, switch to a different mermaid and download also succeeds
+- Fix: Mermaid diagram button sometimes works and sometimes doesn't. Especially the first click. Download mermaid fails, switch to PlantUML and download succeeds, switch to a different mermaid and download also succeeds
 
 ## Enhancements
 
