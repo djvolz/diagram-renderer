@@ -80,7 +80,7 @@ The main components are:
 - `examples/dashboard.py` - Streamlit web interface
 - `diagram/renderers/static/js/` - Static JavaScript assets (Mermaid.js, VizJS)
 
-## Live Demo
+## Demo
 
 **Input:**
 ```mermaid
@@ -97,11 +97,7 @@ flowchart LR
     F --> I[🔍 Zoom/Pan]
 ```
 
-**Output:** Interactive HTML with zoom/pan controls, responsive design, and PNG export:
-
-![Library Demo Diagram](demo.png)
-
-The generated HTML includes:
+**Output:** The generated HTML includes:
 - 🔍 **Interactive zoom and pan controls**
 - 📱 **Responsive design** 
 - 🖼️ **PNG export functionality**
