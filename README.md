@@ -99,7 +99,7 @@ flowchart LR
 
 **Output:** Interactive HTML with zoom/pan controls, responsive design, and PNG export:
 
-![Library Demo Diagram](demo.svg)
+![Library Demo Diagram](demo.png)
 
 The generated HTML includes:
 - 🔍 **Interactive zoom and pan controls**
