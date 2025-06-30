@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: transparent;
+            height: 100vh;
+            width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+            position: relative;
+        }
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            cursor: grab;
+        }
+        .diagram-container:active {
+            cursor: grabbing;
+        }
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .zoom-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: #0056b3;
+        }
+        .zoom-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .zoom-btn:disabled:hover {
+            background: #ccc;
+        }
+        .zoom-level {
+            font-size: 11px;
+            text-align: center;
+            color: #666;
+            margin: 2px 0;
+        }
+        .mermaid-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: visible;
+            transform-origin: center center;
+            transition: transform 0.1s ease;
+        }
+        .mermaid {
+            width: auto;
+            height: auto;
+            text-align: center;
+            overflow: visible;
+        }
+        .mermaid svg {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+        }
+    </style>
+    <script src="{static_js_path}"></script>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()">+</button>
+            <div class="zoom-level" id="zoom-level">100%</div>
+            <button class="zoom-btn" onclick="zoomOut()">−</button>
+            <button class="zoom-btn" onclick="resetZoom()" title="Reset">⌂</button>
+            <button class="zoom-btn" id="download-btn" onclick="downloadPNG()" title="Loading diagram..." disabled>📥</button>
+            <button class="zoom-btn" onclick="downloadCode()" title="Download Source Code">📄</button>
+        </div>
+        <div class="mermaid-container" id="mermaid-container">
+            <div class="mermaid">
+{clean_code}
+            </div>
+        </div>
+    </div>
+    <script>
+        const mermaidContainer = document.getElementById('mermaid-container');
+        const zoomLevelDisplay = document.getElementById('zoom-level');
+        
+        let currentZoom = 1.0;
+        let currentPanX = 0;
+        let currentPanY = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let diagramReady = false;
+        
+        function isSVGReady(svgElement) {
+            try {
+                const bbox = svgElement.getBBox();
+                return bbox.width > 0 && bbox.height > 0;
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        function waitForSVGReady(callback, maxAttempts = 20) {
+            let attempts = 0;
+            const checkReady = () => {
+                const svgElement = mermaidContainer.querySelector('svg');
+                if (svgElement && isSVGReady(svgElement)) {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    attempts++;
+                    setTimeout(checkReady, 100);
+                } else {
+                    console.warn('SVG took longer than expected to become ready');
+                    callback();
+                }
+            };
+            checkReady();
+        }
+        
+        function updateTransform() {
+            mermaidContainer.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+            zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
+        }
+        
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.2, 3.0);
+            updateTransform();
+        }
+        
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.2, 0.1);
+            updateTransform();
+        }
+        
+        function resetZoom() {
+            currentZoom = 1.0;
+            currentPanX = 0;
+            currentPanY = 0;
+            updateTransform();
+        }
+        
+        function generateFileName(originalCode, extension, diagramType) {
+            if (!diagramType) {
+                const lowerCode = originalCode.toLowerCase();
+                if (lowerCode.includes('@startuml') || lowerCode.includes('@enduml')) {
+                    diagramType = 'plantuml';
+                } else if (lowerCode.includes('digraph') || lowerCode.includes('->')) {
+                    diagramType = 'graphviz';
+                } else {
+                    diagramType = 'mermaid';
+                }
+            }
+            
+            const cleanCode = originalCode.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            const skipWords = new Set([
+                'graph', 'td', 'lr', 'bt', 'rl', 'tb', 'sequencediagram', 'participant', 'as', 
+                'actor', 'note', 'over', 'end', 'alt', 'else', 'loop', 'opt', 'par', 'and', 
+                'mermaid', 'diagram', 'start', 'stop', 'digraph', 'strict', 'subgraph', 'node', 
+                'edge', 'rankdir', 'bgcolor', 'fontname', 'fontsize', 'label', 'shape', 'color', 
+                'style', 'startuml', 'enduml', 'skinparam', 'theme', 'include'
+            ]);
+            
+            const words = cleanCode.split(' ')
+                .filter(word => word.length > 2 && !skipWords.has(word))
+                .slice(0, 3);
+            
+            let baseName = diagramType + '-diagram';
+            if (words.length > 0) {
+                baseName = diagramType + '-' + words.join('-');
+                if (baseName.length > 30) {
+                    baseName = baseName.substring(0, 30);
+                }
+            }
+            
+            return baseName + extension;
+        }
+        
+        function downloadPNG() {
+            if (!diagramReady) {
+                alert('Diagram is still loading. Please wait a moment and try again.');
+                return;
+            }
+            
+            const svgElement = mermaidContainer.querySelector('svg');
+            if (!svgElement || !isSVGReady(svgElement)) {
+                alert('Diagram is still rendering. Please wait a moment and try again.');
+                return;
+            }
+            
+            const svgClone = svgElement.cloneNode(true);
+            
+            let bbox, width, height;
+            try {
+                bbox = svgElement.getBBox();
+                width = bbox.width || svgElement.clientWidth || 800;
+                height = bbox.height || svgElement.clientHeight || 600;
+            } catch (error) {
+                width = svgElement.clientWidth || 800;
+                height = svgElement.clientHeight || 600;
+                bbox = { x: 0, y: 0, width: width, height: height };
+            }
+            
+            if (width <= 0 || height <= 0) {
+                alert('Unable to determine diagram dimensions. Please try again in a moment.');
+                return;
+            }
+            
+            svgClone.setAttribute('width', width);
+            svgClone.setAttribute('height', height);
+            svgClone.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${width} ${height}`);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            ctx.scale(2, 2);
+            
+            let svgData = new XMLSerializer().serializeToString(svgClone);
+            svgData = svgData.replace(/<foreignObject[^>]*>.*?<\/foreignObject>/gi, '');
+            svgData = svgData.replace(/&nbsp;/g, ' ');
+            
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                try {
+                    const pngDataUrl = canvas.toDataURL('image/png');
+                    const originalCode = {escaped_original};
+                    const fileName = generateFileName(originalCode, '.png');
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = pngDataUrl;
+                    link.click();
+                } catch (error) {
+                    alert('Failed to create PNG. Security restrictions may prevent export.');
+                }
+            };
+            img.onerror = function() {
+                alert('Failed to generate PNG. The SVG may contain unsupported elements.');
+            };
+            img.src = dataUrl;
+        }
+        
+        function downloadCode() {
+            const originalCode = {escaped_original};
+            const fileName = generateFileName(originalCode, '.mmd');
+            const blob = new Blob([originalCode], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+        
+        // Mouse drag pan
+        mermaidContainer.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                currentPanX += deltaX;
+                currentPanY += deltaY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                updateTransform();
+            }
+        });
+        
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        // Initialize Mermaid
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    fontFamily: 'Arial, sans-serif',
+                    flowchart: {
+                        useMaxWidth: true,
+                        htmlLabels: true
+                    }
+                });
+                
+                const mermaidElements = document.querySelectorAll('.mermaid');
+                let renderPromises = [];
+                
+                mermaidElements.forEach(async (element, index) => {
+                    const renderPromise = (async () => {
+                        try {
+                            const id = 'mermaid-' + index;
+                            const {svg} = await mermaid.render(id, element.textContent);
+                            element.innerHTML = svg;
+                            updateTransform();
+                        } catch (error) {
+                            console.error('Mermaid rendering error:', error);
+                            element.innerHTML = '<div style="color: red; padding: 20px; border: 1px solid red; background-color: #ffe6e6;">Error rendering diagram: ' + error.message + '</div>';
+                        }
+                    })();
+                    renderPromises.push(renderPromise);
+                });
+                
+                Promise.all(renderPromises).then(() => {
+                    waitForSVGReady(() => {
+                        diagramReady = true;
+                        const downloadBtn = document.getElementById('download-btn');
+                        if (downloadBtn) {
+                            downloadBtn.disabled = false;
+                            downloadBtn.title = 'Download PNG';
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Mermaid initialization error:', error);
+                document.querySelector('.mermaid').innerHTML = '<div style="color: red; padding: 20px;">Failed to initialize Mermaid: ' + error.message + '</div>';
+            }
+        });
+    </script>
+</body>
+</html>

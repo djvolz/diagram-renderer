@@ -84,3 +84,23 @@ class MermaidRenderer(BaseRenderer):
         html = html.replace('{theme}', theme)
         html = html.replace('{clean_code}', clean_code)
         return html
+
+    def render_html_external(self, code, static_js_path="diagram_renderer/renderers/static/js/mermaid.min.js", **kwargs):
+        """Generate HTML with external script reference instead of embedded JS"""
+        # Clean mermaid code
+        clean_code = self.clean_code(code)
+        
+        # Escape original code for JavaScript
+        import json
+        escaped_original = json.dumps(code)
+        
+        # Get template and substitute variables
+        template = self.get_template_content("mermaid-external.html")
+        if not template:
+            return "<div>Error: Mermaid external template not available</div>"
+        
+        # Use replace instead of format to avoid issues with CSS curly braces
+        html = template.replace('{static_js_path}', static_js_path)
+        html = html.replace('{clean_code}', clean_code)
+        html = html.replace('{escaped_original}', escaped_original)
+        return html
