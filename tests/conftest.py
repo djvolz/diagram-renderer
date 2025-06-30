@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for diagram-render tests
+Pytest configuration and fixtures for diagram-renderer tests
 """
 import pytest
 from pathlib import Path
@@ -11,8 +11,8 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from diagram.renderers import MermaidRenderer, PlantUMLRenderer, GraphvizRenderer
-from diagram import DiagramRenderer
+from diagram_renderer.renderers import MermaidRenderer, PlantUMLRenderer, GraphvizRenderer
+from diagram_renderer import DiagramRenderer
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ def temp_output_dir():
 @pytest.fixture
 def static_js_exists():
     """Check if static JS files exist (skip tests if missing)"""
-    static_dir = project_root / "diagram" / "static" / "js"
+    static_dir = project_root / "diagram_renderer" / "static" / "js"
     mermaid_exists = (static_dir / "mermaid.min.js").exists()
     viz_lite_exists = (static_dir / "viz-lite.js").exists()
     viz_full_exists = (static_dir / "viz-full.js").exists()

@@ -21,9 +21,7 @@ import time
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-# Add parent directory to path to import diagram module
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from diagram_renderer import DiagramRenderer
+from . import DiagramRenderer
 
 
 @click.group()

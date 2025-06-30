@@ -27,9 +27,8 @@ The `examples/` directory contains two demonstration applications:
 
 **Streamlit Dashboard** - Interactive web interface:
 ```bash
-uv run python examples/cli.py dashboard
-# or directly:
-uv run streamlit run examples/dashboard.py
+uv sync --extra dashboard
+uv run --extra dashboard python -m streamlit run examples/dashboard.py
 ```
 
 **Command Line Interface** - Batch processing and automation:

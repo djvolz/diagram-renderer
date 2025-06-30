@@ -1,5 +1,5 @@
 import pytest
-from diagram import DiagramRenderer
+from diagram_renderer import DiagramRenderer
 
 
 class TestDiagramRenderer:

@@ -11,3 +11,8 @@ wheels/
 
 # Development files
 todo.md
+
+# Generated test files
+*.html
+diagram.*
+mermaid-test.*

@@ -3,7 +3,7 @@ Tests for the base renderer functionality
 """
 import pytest
 from pathlib import Path
-from diagram.renderers.base import BaseRenderer
+from diagram_renderer.renderers.base import BaseRenderer
 
 
 class MockRenderer(BaseRenderer):

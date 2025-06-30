@@ -2,7 +2,7 @@
 Tests for PlantUMLRenderer functionality
 """
 import pytest
-from diagram.renderers.plantuml import PlantUMLRenderer
+from diagram_renderer.renderers.plantuml import PlantUMLRenderer
 
 
 class TestPlantUMLRenderer:

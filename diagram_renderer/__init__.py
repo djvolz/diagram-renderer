@@ -1,6 +1,8 @@
 from .renderers import MermaidRenderer, PlantUMLRenderer, GraphvizRenderer
 import re
 
+__version__ = "0.1.0"
+
 class DiagramRenderer:
     """Main diagram renderer that delegates to specialized renderers"""
     
@@ -119,3 +121,11 @@ class DiagramRenderer:
             # Log the error but don't crash the entire rendering process
             print(f"Warning: Failed to render diagram: {str(e)}")
             return None
+
+# Make all components available at package level
+__all__ = [
+    'DiagramRenderer',
+    'MermaidRenderer',
+    'PlantUMLRenderer',
+    'GraphvizRenderer'
+]

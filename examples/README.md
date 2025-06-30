@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example applications that demonstrate how to use the diagram-render library.
+This directory contains example applications that demonstrate how to use the diagram-renderer library.
 
 ## Applications
 
@@ -13,13 +13,16 @@ An interactive web application built with Streamlit that provides:
 - PNG download functionality
 - Wide layout with side-by-side editor and preview
 
+**Setup:**
+```bash
+# Install optional dependencies
+uv sync --extra all
+```
+
 **Usage:**
 ```bash
-# Launch via main entry point
-uv run main.py dashboard
-
-# Or run directly
-uv run streamlit run examples/dashboard.py
+# Run directly
+uv run --extra dashboard python -m streamlit run examples/dashboard.py
 ```
 
 ### 2. Command Line Interface (`cli.py`)
@@ -27,6 +30,7 @@ uv run streamlit run examples/dashboard.py
 A standalone CLI utility for batch processing and automation:
 - Render diagrams from files to HTML
 - Quick inline diagram rendering
+- Serve diagrams via local HTTP server
 - Diagram type detection and analysis
 - File information and preview
 - Example code generation
@@ -34,19 +38,22 @@ A standalone CLI utility for batch processing and automation:
 **Usage:**
 ```bash
 # Render a diagram file
-uv run python examples/cli.py render diagram.mmd
+uv run examples/cli.py render diagram.mmd
 
 # Quick render from command line
-uv run python examples/cli.py quick "graph TD; A-->B"
+uv run examples/cli.py quick "graph TD; A-->B"
+
+# Serve a diagram with HTTP server
+uv run examples/cli.py serve diagram.mmd
 
 # Show examples
-uv run python examples/cli.py examples
+uv run examples/cli.py examples
 
 # Get file info
-uv run python examples/cli.py info diagram.mmd
+uv run examples/cli.py info diagram.mmd
 
 # Show help
-uv run python examples/cli.py --help
+uv run examples/cli.py --help
 ```
 
 ## Use Cases
@@ -59,6 +66,7 @@ uv run python examples/cli.py --help
 
 ### CLI Tool
 - **Batch processing** - Convert multiple diagram files
+- **Local serving** - Quick preview with HTTP server
 - **CI/CD integration** - Automated diagram generation
 - **Documentation builds** - Generate diagrams for docs
 - **Scripting** - Programmatic diagram creation
@@ -68,7 +76,7 @@ uv run python examples/cli.py --help
 Both examples show different patterns for using the core `diagram` library:
 
 ```python
-from diagram import DiagramRenderer
+from diagram_renderer import DiagramRenderer
 
 # Basic usage
 renderer = DiagramRenderer()

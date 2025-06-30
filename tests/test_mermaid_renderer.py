@@ -3,7 +3,7 @@
 Tests for MermaidRenderer functionality
 """
 import pytest
-from diagram.renderers.mermaid import MermaidRenderer
+from diagram_renderer.renderers.mermaid import MermaidRenderer
 
 
 class TestMermaidRenderer:

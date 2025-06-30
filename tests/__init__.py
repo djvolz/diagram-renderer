@@ -1,5 +1,5 @@
 """
-Test suite for diagram-render application
+Test suite for diagram-renderer application
 
 This package contains tests for:
 - Individual renderer modules (unit tests)

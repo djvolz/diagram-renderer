@@ -96,7 +96,7 @@ class TestDashboardIntegration:
         """Test that dashboard sample diagrams are valid"""
         try:
             import st_diagram
-            from diagram import DiagramRenderer
+            from diagram_renderer import DiagramRenderer
             
             # Test the sample diagrams used in dashboard
             sample_mermaid = """
@@ -292,7 +292,7 @@ class TestDashboardErrorHandling:
     # def test_missing_static_files_handling(self):
     #     """Test dashboard behavior when static JS files are missing"""
     #     try:
-    #         from diagram import DiagramRenderer
+    #         from diagram_renderer import DiagramRenderer
             
     #         renderer = DiagramRenderer()
             

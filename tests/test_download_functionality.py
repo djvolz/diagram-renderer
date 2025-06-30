@@ -2,7 +2,7 @@
 Tests for PNG and source code download functionality
 """
 import pytest
-from diagram import DiagramRenderer
+from diagram_renderer import DiagramRenderer
 
 
 class TestDownloadFunctionality:
@@ -112,15 +112,19 @@ class TestDownloadFunctionality:
         """Test that download filenames are set appropriately"""
         renderer = DiagramRenderer()
         
-        # Test Mermaid
+        # Test Mermaid - should include dynamic filename generation
         mermaid_html = renderer.render_diagram_auto("graph TD; A-->B")
-        assert 'mermaid-diagram.png' in mermaid_html
-        assert 'mermaid-diagram.mmd' in mermaid_html
+        assert 'generateFileName' in mermaid_html
+        assert 'mermaid' in mermaid_html  # Should reference mermaid type
+        assert '.png' in mermaid_html
+        assert '.mmd' in mermaid_html
         
-        # Test Graphviz  
+        # Test Graphviz - should include dynamic filename generation  
         graphviz_html = renderer.render_diagram_auto("digraph G { A -> B; }")
-        assert 'diagram.png' in graphviz_html
-        assert 'diagram-source.txt' in graphviz_html
+        assert 'generateFileName' in graphviz_html
+        assert 'graphviz' in graphviz_html  # Should reference graphviz type
+        assert '.png' in graphviz_html
+        assert '.txt' in graphviz_html
     
     def test_svg_namespace_handling(self):
         """Test that SVG namespace is properly handled"""

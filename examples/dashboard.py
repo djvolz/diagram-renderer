@@ -1,10 +1,5 @@
 import streamlit as st
-import sys
-from pathlib import Path
-
-# Add parent directory to path to import modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from st_diagram import StreamlitDiagramRenderer
+from streamlit_diagram import StreamlitDiagramRenderer
 
 def generate_sample_diagrams():
     """Generate sample Mermaid and PlantUML diagrams"""
@@ -188,7 +183,7 @@ def main():
     
     with col2:
         st.header("📊 Diagram Preview")
-        st.info("🖱️ Use mouse wheel to zoom, drag to pan, + / - buttons to zoom, ⌂ to reset, and 📥 to download PNG")
+        st.info("🖱️ Drag to pan, + / - buttons to zoom, ⌂ to reset, and 📥 to download PNG")
         
         # Render diagram
         if hasattr(st.session_state, 'diagram_code'):

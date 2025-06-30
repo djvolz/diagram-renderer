@@ -1,11 +1,124 @@
 [project]
-name = "diagram-render"
+name = "diagram-renderer"
 version = "0.1.0"
 description = "A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Graphviz diagrams with interactive zoom/pan controls and PNG export"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "click>=8.2.1",
-    "pytest>=8.4.1",
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Danny Volz", email = "volz.developer@gmail.com"},
+]
+maintainers = [
+    {name = "Danny Volz", email = "volz.developer@gmail.com"},
+]
+keywords = ["diagram", "mermaid", "plantuml", "graphviz", "visualization", "renderer"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Text Processing :: Markup",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/djvolz/diagram-renderer"
+Documentation = "https://github.com/djvolz/diagram-renderer#readme"
+Repository = "https://github.com/djvolz/diagram-renderer.git"
+"Bug Tracker" = "https://github.com/djvolz/diagram-renderer/issues"
+Changelog = "https://github.com/djvolz/diagram-renderer/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+cli = [
+    "click>=8.0.0",
+]
+dashboard = [
     "streamlit>=1.46.1",
+]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+all = [
+    "click>=8.0.0",
+    "streamlit>=1.46.1",
+    "pytest>=8.4.1",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+
+[project.scripts]
+diagram-renderer = "diagram_renderer.cli:cli"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["diagram_renderer*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+diagram_renderer = [
+    "renderers/static/**/*", 
+    "renderers/templates/**/*",
+    "py.typed"
+]
+
+# Development tools configuration
+[tool.black]
+line-length = 100
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
 ]

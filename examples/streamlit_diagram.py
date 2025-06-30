@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from diagram import DiagramRenderer
+from diagram_renderer import DiagramRenderer
 
 class StreamlitDiagramRenderer:
     """Streamlit-specific wrapper for DiagramRenderer"""
