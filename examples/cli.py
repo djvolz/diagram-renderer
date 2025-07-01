@@ -315,6 +315,39 @@ def webapp():
 
 
 @cli.command()
+def mcp():
+    """Launch the MCP (Model Context Protocol) server for AI assistant integration."""
+    
+    try:
+        # Check if MCP dependencies are installed
+        try:
+            import mcp
+        except ImportError:
+            click.echo("❌ MCP dependencies not installed.")
+            click.echo("Install with: uv sync --extra mcp")
+            sys.exit(1)
+        
+        click.echo("🤖 Starting Diagram Renderer MCP Server...")
+        click.echo("📡 AI assistants can now use diagram rendering capabilities")
+        click.echo("🔧 Provides tools: render_diagram, detect_diagram_type, validate_diagram")
+        click.echo("📖 Resources: examples, supported-types")
+        click.echo("Press Ctrl+C to stop the server\n")
+        
+        # Import and run the MCP server
+        mcp_path = Path(__file__).parent / "mcp_server.py"
+        subprocess.run([
+            "uv", "run", "--extra", "mcp", 
+            "python", str(mcp_path)
+        ], check=True)
+        
+    except subprocess.CalledProcessError as e:
+        click.echo(f"❌ Error running MCP server: {e}", err=True)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        click.echo("\n👋 MCP server stopped")
+
+
+@cli.command()
 def examples():
     """Show example diagram code for each supported type."""
     

@@ -3,7 +3,7 @@ name = "diagram-renderer"
 version = "0.1.0"
 description = "A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Graphviz diagrams with interactive zoom/pan controls and PNG export"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 authors = [
     {name = "Danny Volz", email = "volz.developer@gmail.com"},
@@ -17,7 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -48,6 +47,9 @@ webapp = [
     "pydantic>=2.5.0",
     "httpx>=0.25.0",
 ]
+mcp = [
+    "mcp>=1.0.0",
+]
 dev = [
     "pytest>=8.4.1",
     "pytest-cov>=4.0.0",
@@ -61,6 +63,7 @@ all = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.5.0",
+    "mcp>=1.0.0",
     "pytest>=8.4.1",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",

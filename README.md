@@ -12,8 +12,9 @@ A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Grap
 - VizJS for Graphviz/DOT rendering (locally hosted, 1.9MB)
 - PlantUML to DOT conversion and rendering
 - Multiple themes for Mermaid diagrams
-- Interactive Streamlit dashboard and FastAPI web app
+- Interactive Streamlit dashboard, FastAPI web app, and MCP server
 - **No external CDN dependencies** - Works offline
+- **AI Assistant Integration** - MCP server for Claude Desktop and other AI tools
 
 ## Installation
 
@@ -25,7 +26,7 @@ uv install
 
 ### Examples
 
-The `examples/` directory contains three demonstration applications:
+The `examples/` directory contains four demonstration applications:
 
 **Streamlit Dashboard** - Interactive web interface:
 ```bash
@@ -41,6 +42,13 @@ uv run --extra dashboard ./examples/run-dashboard.py
 uv sync --extra webapp
 uv run --extra webapp python examples/cli.py webapp
 # or directly: uv run --extra webapp python examples/webapp.py
+```
+
+**MCP Server** - AI assistant integration via Model Context Protocol:
+```bash
+uv sync --extra mcp
+uv run --extra mcp python examples/cli.py mcp
+# or directly: uv run --extra mcp python examples/mcp_server.py
 ```
 
 **Command Line Interface** - Batch processing and automation:
@@ -94,6 +102,7 @@ The main components are:
 - `examples/cli.py` - Command-line interface and app launcher
 - `examples/dashboard.py` - Streamlit web interface
 - `examples/webapp.py` - FastAPI REST API and web interface
+- `examples/mcp_server.py` - MCP server for AI assistant integration
 - `diagram_renderer/renderers/static/js/` - **Local JavaScript libraries**
   - `mermaid.min.js` (2.8MB) - Mermaid diagram rendering
   - `viz-full.js` (1.9MB) - Graphviz/DOT rendering
