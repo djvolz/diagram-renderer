@@ -6,10 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
-    {name = "Danny Volz", email = "volz.developer@gmail.com"},
+    {name = "Danny Volz", email = "volz.developer+diagram-renderer@gmail.com"},
 ]
 maintainers = [
-    {name = "Danny Volz", email = "volz.developer@gmail.com"},
+    {name = "Danny Volz", email = "volz.developer+diagram-renderer@gmail.com"},
 ]
 keywords = ["diagram", "mermaid", "plantuml", "graphviz", "visualization", "renderer"]
 classifiers = [
