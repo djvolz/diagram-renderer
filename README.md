@@ -23,12 +23,19 @@ uv install
 
 ### Examples
 
-The `examples/` directory contains two demonstration applications:
+The `examples/` directory contains three demonstration applications:
 
 **Streamlit Dashboard** - Interactive web interface:
 ```bash
 uv sync --extra dashboard
 uv run --extra dashboard python -m streamlit run examples/dashboard.py
+```
+
+**FastAPI Web App** - REST API and web interface:
+```bash
+uv sync --extra webapp
+uv run --extra webapp python examples/cli.py webapp
+# or directly: uv run --extra webapp python examples/webapp.py
 ```
 
 **Command Line Interface** - Batch processing and automation:

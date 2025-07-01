@@ -281,6 +281,40 @@ def serve(input_file, port, no_browser, output):
 
 
 @cli.command()
+def webapp():
+    """Launch the FastAPI web application with REST API and web interface."""
+    
+    try:
+        # Check if webapp dependencies are installed
+        try:
+            import fastapi
+            import uvicorn
+        except ImportError:
+            click.echo("❌ FastAPI webapp dependencies not installed.")
+            click.echo("Install with: uv sync --extra webapp")
+            sys.exit(1)
+        
+        click.echo("🚀 Starting Diagram Renderer Web App...")
+        click.echo("📍 Web Interface: http://localhost:8000")
+        click.echo("📚 API Docs: http://localhost:8000/docs") 
+        click.echo("💡 Health Check: http://localhost:8000/health")
+        click.echo("Press Ctrl+C to stop the server\n")
+        
+        # Import and run the webapp
+        webapp_path = Path(__file__).parent / "webapp.py"
+        subprocess.run([
+            "uv", "run", "--extra", "webapp", 
+            "python", str(webapp_path)
+        ], check=True)
+        
+    except subprocess.CalledProcessError as e:
+        click.echo(f"❌ Error running webapp: {e}", err=True)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        click.echo("\n👋 Web app stopped")
+
+
+@cli.command()
 def examples():
     """Show example diagram code for each supported type."""
     

@@ -42,6 +42,12 @@ cli = [
 dashboard = [
     "streamlit>=1.46.1",
 ]
+webapp = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "httpx>=0.25.0",
+]
 dev = [
     "pytest>=8.4.1",
     "pytest-cov>=4.0.0",
@@ -52,6 +58,9 @@ dev = [
 all = [
     "click>=8.0.0",
     "streamlit>=1.46.1",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
     "pytest>=8.4.1",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
