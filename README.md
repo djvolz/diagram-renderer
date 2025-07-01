@@ -7,11 +7,13 @@ A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Grap
 ## Features
 
 - Automatic diagram type detection (Mermaid, PlantUML, Graphviz)
-- Static Mermaid.js assets (version controlled)
-- VizJS for Graphviz/DOT rendering
+- **Self-contained rendering** - All JavaScript libraries hosted locally
+- Static Mermaid.js assets (version controlled, 2.8MB)
+- VizJS for Graphviz/DOT rendering (locally hosted, 1.9MB)
 - PlantUML to DOT conversion and rendering
 - Multiple themes for Mermaid diagrams
-- Interactive Streamlit dashboard
+- Interactive Streamlit dashboard and FastAPI web app
+- **No external CDN dependencies** - Works offline
 
 ## Installation
 
@@ -81,11 +83,15 @@ uv run python examples/cli.py --help
 
 The main components are:
 
-- `diagram/` - Core diagram rendering logic and renderers
+- `diagram_renderer/` - Core diagram rendering logic and renderers
 - `st_diagram.py` - Streamlit diagram component wrapper
-- `examples/cli.py` - Command-line interface and dashboard launcher
+- `examples/cli.py` - Command-line interface and app launcher
 - `examples/dashboard.py` - Streamlit web interface
-- `diagram/renderers/static/js/` - Static JavaScript assets (Mermaid.js, VizJS)
+- `examples/webapp.py` - FastAPI REST API and web interface
+- `diagram_renderer/renderers/static/js/` - **Local JavaScript libraries**
+  - `mermaid.min.js` (2.8MB) - Mermaid diagram rendering
+  - `viz-full.js` (1.9MB) - Graphviz/DOT rendering
+  - `viz-lite.js` (11KB) - Lightweight VizJS alternative
 
 ## Demo
 
@@ -109,7 +115,8 @@ flowchart LR
 - 📱 **Responsive design** 
 - 🖼 **PNG export functionality**
 - 🎨 **Automatic diagram type detection**
-- ⚡ **Lightweight** - Only 14KB using external JS references vs 2.8MB embedded
+- 🔒 **Self-contained** - All JS libraries included locally (no CDN dependencies)
+- ⚡ **Two output modes** - Lightweight external JS (14KB) or fully embedded (4.7MB)
 
 Try it yourself:
 ```bash
