@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "diagram-renderer": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--extra",
+        "mcp",
+        "python",
+        "examples/mcp_server.py"
+      ],
+      "env": {}
+    }
+  }
+}
