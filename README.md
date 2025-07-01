@@ -18,7 +18,20 @@ A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Grap
 
 ## Installation
 
+Install from PyPI:
+
 ```bash
+# Using uv (recommended)
+uv add diagram-renderer
+
+# Using pip
+pip install diagram-renderer
+```
+
+For development setup:
+```bash
+git clone https://github.com/djvolz/diagram-renderer.git
+cd diagram-renderer
 uv install
 ```
 
