@@ -30,7 +30,10 @@ The `examples/` directory contains three demonstration applications:
 **Streamlit Dashboard** - Interactive web interface:
 ```bash
 uv sync --extra dashboard
+# Run directly
 uv run --extra dashboard python -m streamlit run examples/dashboard.py
+# Or use the convenience script
+uv run --extra dashboard ./examples/run-dashboard.py
 ```
 
 **FastAPI Web App** - REST API and web interface:
@@ -47,6 +50,9 @@ uv run python examples/cli.py render diagram.mmd
 
 # Quick inline rendering
 uv run python examples/cli.py quick "graph TD; A-->B"
+
+# Serve a diagram with HTTP server
+uv run python examples/cli.py serve diagram.mmd
 
 # Show examples and help
 uv run python examples/cli.py examples
