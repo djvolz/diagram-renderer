@@ -11,9 +11,9 @@ class TestDiagramRenderer:
         assert len(diagram_renderer.renderers) == 3
         
         # Verify renderer types and order
-        from diagram.renderers.graphviz import GraphvizRenderer
-        from diagram.renderers.plantuml import PlantUMLRenderer
-        from diagram.renderers.mermaid import MermaidRenderer
+        from diagram_renderer.renderers.graphviz import GraphvizRenderer
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+        from diagram_renderer.renderers.mermaid import MermaidRenderer
         
         assert diagram_renderer.renderers[0][0] == "graphviz"
         assert isinstance(diagram_renderer.renderers[0][1], GraphvizRenderer)
