@@ -93,14 +93,14 @@ flowchart LR
     D --> F
     E --> F
     F --> G[📱 Responsive]
-    F --> H[🖼️ PNG Export]
+    F --> H[🖼 PNG Export]
     F --> I[🔍 Zoom/Pan]
 ```
 
 **Output:** The generated HTML includes:
 - 🔍 **Interactive zoom and pan controls**
 - 📱 **Responsive design** 
-- 🖼️ **PNG export functionality**
+- 🖼 **PNG export functionality**
 - 🎨 **Automatic diagram type detection**
 - ⚡ **Lightweight** - Only 14KB using external JS references vs 2.8MB embedded
 

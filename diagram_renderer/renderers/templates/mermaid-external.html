@@ -6,7 +6,7 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: transparent;
+            background-color: white;
             height: 100vh;
             width: 100%;
             min-height: 500px;
@@ -23,49 +23,63 @@
         .diagram-container:active {
             cursor: grabbing;
         }
-        .zoom-controls {
+        .top-controls {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            padding: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             display: flex;
-            flex-direction: column;
             gap: 4px;
         }
-        .zoom-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        .bottom-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            grid-gap: 2px;
+        }
+        .control-btn {
+            background: #ffffff;
+            color: #24292e;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
             width: 32px;
             height: 32px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 14px;
+            font-weight: 400;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.08s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .zoom-btn:hover {
-            background: #0056b3;
+        .control-btn:hover {
+            background: #f6f8fa;
+            border-color: #8c959f;
         }
-        .zoom-btn:disabled {
-            background: #ccc;
+        .control-btn:active {
+            background: #e1e7ef;
+            transform: scale(0.98);
+        }
+        .control-btn:disabled {
+            background: #f6f8fa;
+            color: #8c959f;
             cursor: not-allowed;
             opacity: 0.6;
         }
-        .zoom-btn:disabled:hover {
-            background: #ccc;
-        }
-        .zoom-level {
-            font-size: 11px;
-            text-align: center;
-            color: #666;
-            margin: 2px 0;
+        .control-btn:disabled:hover {
+            background: #f6f8fa;
+            border-color: #d0d7de;
+            transform: none;
         }
         .mermaid-container {
             width: 100%;
@@ -93,13 +107,23 @@
 </head>
 <body>
     <div class="diagram-container">
-        <div class="zoom-controls">
-            <button class="zoom-btn" onclick="zoomIn()">+</button>
-            <div class="zoom-level" id="zoom-level">100%</div>
-            <button class="zoom-btn" onclick="zoomOut()">−</button>
-            <button class="zoom-btn" onclick="resetZoom()" title="Reset">⌂</button>
-            <button class="zoom-btn" id="download-btn" onclick="downloadPNG()" title="Loading diagram..." disabled>📥</button>
-            <button class="zoom-btn" onclick="downloadCode()" title="Download Source Code">📄</button>
+        <!-- Top-right controls -->
+        <div class="top-controls">
+            <button class="control-btn" onclick="downloadPNG()" title="Download PNG">🖼</button>
+            <button class="control-btn" onclick="downloadCode()" title="Download Source Code">&lt;/&gt;</button>
+            <button class="control-btn" onclick="copyDiagram()" title="Copy">⧉</button>
+        </div>
+        
+        <!-- Bottom-right controls grid -->
+        <div class="bottom-controls">
+            <button class="control-btn" onclick="zoomIn()" title="Zoom In">+</button>
+            <button class="control-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+            <button class="control-btn" onclick="panUp()" title="Pan Up">↑</button>
+            <button class="control-btn" onclick="panDown()" title="Pan Down">↓</button>
+            <button class="control-btn" onclick="panLeft()" title="Pan Left">←</button>
+            <button class="control-btn" onclick="panRight()" title="Pan Right">→</button>
+            <button class="control-btn" onclick="toggleFullscreen()" title="Expand/Collapse">↔</button>
+            <button class="control-btn" onclick="resetZoom()" title="Reset View">↻</button>
         </div>
         <div class="mermaid-container" id="mermaid-container">
             <div class="mermaid">
@@ -109,7 +133,6 @@
     </div>
     <script>
         const mermaidContainer = document.getElementById('mermaid-container');
-        const zoomLevelDisplay = document.getElementById('zoom-level');
         
         let currentZoom = 1.0;
         let currentPanX = 0;
@@ -147,7 +170,6 @@
         
         function updateTransform() {
             mermaidContainer.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
-            zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
         }
         
         function zoomIn() {
@@ -165,6 +187,58 @@
             currentPanX = 0;
             currentPanY = 0;
             updateTransform();
+        }
+        
+        // New GitHub-style control functions
+        function panLeft() {
+            currentPanX += 50;
+            updateTransform();
+        }
+        
+        function panRight() {
+            currentPanX -= 50;
+            updateTransform();
+        }
+        
+        function panUp() {
+            currentPanY += 50;
+            updateTransform();
+        }
+        
+        function panDown() {
+            currentPanY -= 50;
+            updateTransform();
+        }
+        
+        function toggleFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                document.documentElement.requestFullscreen();
+            }
+        }
+        
+        function copyDiagram() {
+            try {
+                const originalCode = {escaped_original};
+                
+                // Copy source code to clipboard
+                navigator.clipboard.writeText(originalCode).then(() => {
+                    // Visual feedback
+                    const copyBtn = event.target;
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '✓';
+                    copyBtn.style.color = '#28a745';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                        copyBtn.style.color = '';
+                    }, 1000);
+                }).catch(() => {
+                    alert('Failed to copy source code to clipboard');
+                });
+            } catch (error) {
+                alert('Failed to copy source code');
+            }
         }
         
         function generateFileName(originalCode, extension, diagramType) {
@@ -316,6 +390,12 @@
             isDragging = false;
         });
         
+        // Double-click to zoom in
+        mermaidContainer.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            zoomIn();
+        });
+        
         // Initialize Mermaid
         document.addEventListener('DOMContentLoaded', function() {
             try {
@@ -351,11 +431,6 @@
                 Promise.all(renderPromises).then(() => {
                     waitForSVGReady(() => {
                         diagramReady = true;
-                        const downloadBtn = document.getElementById('download-btn');
-                        if (downloadBtn) {
-                            downloadBtn.disabled = false;
-                            downloadBtn.title = 'Download PNG';
-                        }
                     });
                 });
             } catch (error) {
