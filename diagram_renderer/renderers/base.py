@@ -51,7 +51,6 @@ class BaseRenderer(ABC):
         """Get HTML template content from templates directory"""
         # Try using importlib.resources first (recommended for package data)
         try:
-            # Python 3.9+
             from importlib.resources import files
 
             template_dir = files("diagram_renderer.renderers") / "templates"
@@ -59,33 +58,60 @@ class BaseRenderer(ABC):
             if template_file.is_file():
                 return template_file.read_text(encoding="utf-8")
         except (ImportError, FileNotFoundError, ModuleNotFoundError, AttributeError):
-            pass
+            # Try older importlib.resources API (Python 3.8)
+            try:
+                import importlib.resources as pkg_resources
 
-        # Fallback to file system paths
+                with pkg_resources.path(
+                    "diagram_renderer.renderers", "templates"
+                ) as templates_path:
+                    template_file = templates_path / filename
+                    if template_file.exists():
+                        return template_file.read_text(encoding="utf-8")
+            except (ImportError, FileNotFoundError, ModuleNotFoundError, AttributeError):
+                pass
+
+        # Fallback to file system paths with more comprehensive search
         possible_paths = [
-            # Standard path: renderers/templates/
-            self.static_dir.parent / "templates" / filename,
-            # Alternative: from module directory
+            # From current module directory
             Path(__file__).parent / "templates" / filename,
-            # Alternative: from package root
+            # From static_dir parent (renderers/templates/)
+            self.static_dir.parent / "templates" / filename,
+            # From package root
             Path(__file__).parent.parent / "renderers" / "templates" / filename,
+            # Alternative package structure
+            Path(__file__).resolve().parent / "templates" / filename,
         ]
 
         for template_file in possible_paths:
-            if template_file.exists():
-                with open(template_file, encoding="utf-8") as f:
-                    return f.read()
+            try:
+                if template_file.exists() and template_file.is_file():
+                    with open(template_file, encoding="utf-8") as f:
+                        return f.read()
+            except OSError:
+                continue
 
         # Debug info for troubleshooting
         import os
 
         debug_info = f"Template '{filename}' not found. Tried importlib.resources and paths:\n"
         for path in possible_paths:
-            debug_info += f"  - {path} (exists: {path.exists()})\n"
+            try:
+                exists = path.exists()
+            except Exception:
+                exists = "error"
+            debug_info += f"  - {path} (exists: {exists})\n"
         debug_info += f"Current working directory: {os.getcwd()}\n"
         debug_info += f"Module file location: {__file__}\n"
-        print(debug_info)  # This will show in test output
 
+        # Try to list what's actually in the templates directory if it exists
+        templates_dir = Path(__file__).parent / "templates"
+        if templates_dir.exists():
+            debug_info += f"Templates directory contents: {list(templates_dir.iterdir())}\n"
+        else:
+            debug_info += f"Templates directory does not exist at: {templates_dir}\n"
+
+        print(debug_info)  # This will show in test output
         return None
 
     def _render_vizjs_html(self, dot_code, original_code=None):
