@@ -88,7 +88,7 @@ version = {attr = "diagram_renderer.__version__.__version__"}
 
 [tool.setuptools.package-data]
 diagram_renderer = [
-    "renderers/static/**/*", 
+    "renderers/static/**/*",
     "renderers/templates/**/*",
     "py.typed"
 ]
@@ -136,4 +136,9 @@ testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
 ]
