@@ -133,7 +133,7 @@ jobs:
     - name: Run tests
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
       run: |
-        uv run pytest tests/test_diagram_renderer.py tests/test_mermaid_renderer.py tests/test_base_renderer.py tests/test_plantuml_renderer.py tests/test_static_assets.py tests/test_charset_encoding.py -v -k "not test_render_svg_html"
+        uv run pytest tests/test_diagram_renderer.py tests/test_mermaid_renderer.py tests/test_base_renderer.py tests/test_plantuml_renderer.py tests/test_static_assets.py tests/test_charset_encoding.py -v
 
     - name: Run quality checks
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
