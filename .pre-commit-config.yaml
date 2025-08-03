@@ -1,0 +1,53 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # Black - Python code formatter
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  # Ruff - Fast Python linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.1
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # MyPy - Static type checker
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.16.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+        args: [--ignore-missing-imports]
+        files: ^diagram_renderer/
+
+  # Pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-toml
+
+  # Local hooks
+  - repo: local
+    hooks:
+      # Run core tests
+      - id: pytest-core-tests
+        name: pytest core tests
+        entry: uv run pytest tests/test_diagram_renderer.py tests/test_mermaid_renderer.py tests/test_base_renderer.py -v
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+# Configuration
+default_stages: [pre-commit]
+fail_fast: false

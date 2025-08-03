@@ -26,7 +26,7 @@ uv sync --extra mcp        # MCP server
 uv run pytest
 
 # Run specific test file
-uv run pytest tests/test_renderer.py
+uv run pytest tests/test_diagram_renderer.py
 
 # Run with coverage
 uv run pytest --cov=diagram_renderer
@@ -39,6 +39,13 @@ uv run ruff check .
 
 # Type checking
 uv run mypy diagram_renderer
+
+# Pre-commit hooks (install once)
+uv run pip install pre-commit
+pre-commit install
+
+# Run pre-commit on all files
+pre-commit run --all-files
 ```
 
 ### Release & Publishing
