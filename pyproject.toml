@@ -1,6 +1,6 @@
 [project]
 name = "diagram-renderer"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A comprehensive diagram rendering service supporting Mermaid, PlantUML, and Graphviz diagrams with interactive zoom/pan controls and PNG export"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -82,6 +82,9 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["diagram_renderer*"]
 exclude = ["tests*", "examples*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "diagram_renderer.__version__.__version__"}
 
 [tool.setuptools.package-data]
 diagram_renderer = [

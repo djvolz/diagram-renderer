@@ -1,7 +1,6 @@
 from .renderers import MermaidRenderer, PlantUMLRenderer, GraphvizRenderer
+from .__version__ import __version__
 import re
-
-__version__ = "0.1.0"
 
 class DiagramRenderer:
     """Main diagram renderer that delegates to specialized renderers"""
