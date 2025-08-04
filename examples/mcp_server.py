@@ -216,7 +216,7 @@ async def render_diagram_tool(arguments: dict[str, Any]) -> list[TextContent]:
     code = arguments.get("code", "").strip()
     diagram_type = arguments.get("diagram_type", "auto")
     save_to_file = arguments.get("save_to_file", False)
-    include_controls = arguments.get("include_controls", True)
+    include_controls = arguments.get("include_controls", True)  # noqa: F841
 
     if not code:
         return [TextContent(type="text", text="Error: No diagram code provided")]
