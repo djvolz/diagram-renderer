@@ -32,12 +32,12 @@ uv run pytest tests/test_diagram_renderer.py
 uv run pytest --cov=diagram_renderer
 
 # Code formatting (auto-fixes)
-uv run black .
+uv run ruff format .
 
 # Linting
 uv run ruff check .
 
-# Type checking
+# Type checking (currently has many annotation issues)
 uv run mypy diagram_renderer
 
 # Pre-commit hooks (install once)
