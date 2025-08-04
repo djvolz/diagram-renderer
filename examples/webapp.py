@@ -5,24 +5,22 @@ Simple FastAPI web application demonstrating diagram-renderer REST API
 This provides both a REST API and a web interface for rendering diagrams.
 """
 
-import json
 import logging
 from pathlib import Path
-from typing import Optional, Literal
-from io import BytesIO
-import base64
+from typing import Literal, Optional
 
 try:
+    import uvicorn
     from fastapi import FastAPI, HTTPException, Request
     from fastapi.responses import HTMLResponse, Response
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel, Field
-    import uvicorn
 except ImportError:
     print("FastAPI dependencies not installed. Run: uv sync --extra webapp")
     exit(1)
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from diagram_renderer import DiagramRenderer
@@ -34,7 +32,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Diagram Renderer API",
     description="REST API for rendering Mermaid, PlantUML, and Graphviz diagrams",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Initialize the diagram renderer
@@ -43,6 +41,7 @@ renderer = DiagramRenderer()
 
 class DiagramRequest(BaseModel):
     """Request model for diagram rendering"""
+
     code: str = Field(..., description="Diagram source code")
     type: Optional[Literal["auto", "mermaid", "plantuml", "graphviz"]] = Field(
         "auto", description="Diagram type (auto-detect if not specified)"
@@ -53,6 +52,7 @@ class DiagramRequest(BaseModel):
 
 class DiagramResponse(BaseModel):
     """Response model for successful diagram rendering"""
+
     success: bool
     diagram_type: str
     format: str
@@ -200,11 +200,11 @@ async def root():
             <h1>🎨 Diagram Renderer</h1>
             <p>Create beautiful diagrams with Mermaid, PlantUML, and Graphviz</p>
         </div>
-        
+
         <div class="content">
             <div class="editor-panel">
                 <div class="panel-header">📝 Diagram Editor</div>
-                
+
                 <div class="controls">
                     <select id="diagramType">
                         <option value="auto">Auto-detect</option>
@@ -218,14 +218,14 @@ async def root():
                     <button id="renderBtn" onclick="renderDiagram()">🚀 Render</button>
                     <button id="downloadBtn" onclick="downloadResult()" disabled>📥 Download</button>
                 </div>
-                
+
                 <textarea id="diagramCode" placeholder="Enter your diagram code here...">graph TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Process A]
     B -->|No| D[Process B]
     C --> E[End]
     D --> E</textarea>
-                
+
                 <div class="examples">
                     <strong>Examples:</strong><br>
                     <button class="example-btn" onclick="loadExample('mermaid-flow')">Mermaid Flow</button>
@@ -233,14 +233,14 @@ async def root():
                     <button class="example-btn" onclick="loadExample('plantuml-class')">PlantUML Class</button>
                     <button class="example-btn" onclick="loadExample('graphviz-network')">Graphviz Network</button>
                 </div>
-                
+
                 <div id="status"></div>
             </div>
-            
+
             <div class="preview-panel">
                 <div class="panel-header">📊 Preview</div>
                 <div class="preview-container">
-                    <iframe id="previewFrame" class="preview-iframe" 
+                    <iframe id="previewFrame" class="preview-iframe"
                             src="data:text/html,<div style='padding:20px;text-align:center;color:#666;'>Click 'Render' to preview your diagram</div>">
                     </iframe>
                 </div>
@@ -278,12 +278,12 @@ Animal <|-- Dog
             'graphviz-network': `digraph network {
     rankdir=LR
     node [shape=circle, style=filled]
-    
+
     Server [fillcolor=lightblue]
     DB [fillcolor=lightgreen, label="Database"]
     API [fillcolor=lightyellow]
     Client [fillcolor=lightcoral]
-    
+
     Server -> DB
     Server -> API
     API -> Client
@@ -319,7 +319,7 @@ Animal <|-- Dog
         async function renderDiagram() {
             const code = document.getElementById('diagramCode').value.trim();
             const type = document.getElementById('diagramType').value;
-            
+
             if (!code) {
                 showStatus('Please enter diagram code', true);
                 return;
@@ -327,7 +327,7 @@ Animal <|-- Dog
 
             const renderBtn = document.getElementById('renderBtn');
             const downloadBtn = document.getElementById('downloadBtn');
-            
+
             renderBtn.disabled = true;
             renderBtn.textContent = '⏳ Rendering...';
             downloadBtn.disabled = true;
@@ -354,7 +354,7 @@ Animal <|-- Dog
                     const blob = new Blob([result.content], { type: 'text/html' });
                     const url = URL.createObjectURL(blob);
                     iframe.src = url;
-                    
+
                     showStatus(`✅ ${result.diagram_type.toUpperCase()} diagram rendered successfully!`);
                     downloadBtn.disabled = false;
                 } else {
@@ -377,7 +377,7 @@ Animal <|-- Dog
             }
 
             const code = document.getElementById('diagramCode').value;
-            
+
             // Generate filename
             const cleanCode = code.toLowerCase().replace(/[^a-z0-9\\s]/g, ' ').replace(/\\s+/g, ' ').trim();
             const words = cleanCode.split(' ').filter(word => word.length > 2).slice(0, 3);
@@ -415,47 +415,42 @@ async def health_check():
 async def render_diagram(request: DiagramRequest):
     """
     Render a diagram from source code
-    
+
     Returns HTML content or base64-encoded PNG based on format parameter
     """
     try:
         logger.info(f"Rendering diagram: type={request.type}, format={request.format}")
-        
+
         # Detect diagram type if auto
         detected_type = request.type
         if request.type == "auto":
             detected_type = renderer.detect_diagram_type(request.code)
             if not detected_type:
                 raise HTTPException(
-                    status_code=400, 
-                    detail="Could not auto-detect diagram type. Please specify type explicitly."
+                    status_code=400,
+                    detail="Could not auto-detect diagram type. Please specify type explicitly.",
                 )
-        
+
         # Render based on format
         if request.format == "html":
             # Use the unified render_diagram_auto method
             html_content = renderer.render_diagram_auto(request.code)
             if not html_content:
                 raise HTTPException(
-                    status_code=400,
-                    detail=f"Failed to render {detected_type} diagram"
+                    status_code=400, detail=f"Failed to render {detected_type} diagram"
                 )
-            
+
             return DiagramResponse(
-                success=True,
-                diagram_type=detected_type,
-                format="html",
-                content=html_content
+                success=True, diagram_type=detected_type, format="html", content=html_content
             )
-            
-            
+
     except Exception as e:
         logger.error(f"Error rendering diagram: {str(e)}")
         return DiagramResponse(
             success=False,
             diagram_type=detected_type or "unknown",
             format=request.format,
-            error=str(e)
+            error=str(e),
         )
 
 
@@ -465,16 +460,16 @@ async def get_examples():
     return {
         "mermaid": {
             "flowchart": "graph TD\\n    A[Start] --> B{Decision}\\n    B -->|Yes| C[End]",
-            "sequence": "sequenceDiagram\\n    Alice->>Bob: Hello\\n    Bob-->>Alice: Hi!"
+            "sequence": "sequenceDiagram\\n    Alice->>Bob: Hello\\n    Bob-->>Alice: Hi!",
         },
         "plantuml": {
             "class": "@startuml\\nclass Animal {\\n  +name: String\\n}\\n@enduml",
-            "sequence": "@startuml\\nAlice -> Bob: Hello\\nBob --> Alice: Hi!\\n@enduml"
+            "sequence": "@startuml\\nAlice -> Bob: Hello\\nBob --> Alice: Hi!\\n@enduml",
         },
         "graphviz": {
             "simple": "digraph G {\\n    A -> B\\n    B -> C\\n}",
-            "network": "graph network {\\n    Server -- Database\\n    Server -- Client\\n}"
-        }
+            "network": "graph network {\\n    Server -- Database\\n    Server -- Client\\n}",
+        },
     }
 
 
@@ -484,14 +479,8 @@ def main():
     print("📍 Web Interface: http://localhost:8000")
     print("📚 API Docs: http://localhost:8000/docs")
     print("💡 Health Check: http://localhost:8000/health")
-    
-    uvicorn.run(
-        "webapp:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+
+    uvicorn.run("webapp:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
 
 
 if __name__ == "__main__":

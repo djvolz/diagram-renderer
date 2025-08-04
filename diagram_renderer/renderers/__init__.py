@@ -8,8 +8,8 @@ This package contains modular renderers for different diagram types:
 """
 
 from .base import BaseRenderer
+from .graphviz import GraphvizRenderer
 from .mermaid import MermaidRenderer
 from .plantuml import PlantUMLRenderer
-from .graphviz import GraphvizRenderer
 
-__all__ = ['BaseRenderer', 'MermaidRenderer', 'PlantUMLRenderer', 'GraphvizRenderer']
+__all__ = ["BaseRenderer", "MermaidRenderer", "PlantUMLRenderer", "GraphvizRenderer"]

@@ -1,5 +1,6 @@
 from .base import BaseRenderer
 
+
 class PlantUMLRenderer(BaseRenderer):
     """Renderer for PlantUML diagrams using VizJS"""
 
@@ -8,8 +9,14 @@ class PlantUMLRenderer(BaseRenderer):
         code = code.strip().lower()
 
         strong_plantuml_indicators = [
-            "@startuml", "@startmindmap", "@startgantt", "@startclass",
-            "@enduml", "skinparam", "!theme", "!include"
+            "@startuml",
+            "@startmindmap",
+            "@startgantt",
+            "@startclass",
+            "@enduml",
+            "skinparam",
+            "!theme",
+            "!include",
         ]
 
         for indicator in strong_plantuml_indicators:
@@ -17,16 +24,23 @@ class PlantUMLRenderer(BaseRenderer):
                 return True
 
         if "participant " in code or "actor " in code:
-            if ("sequencediagram" in code or 
-                "-->" in code or "->>" in code or 
-                ("participant " in code and ("as " in code or ":" in code))):
+            if (
+                "sequencediagram" in code
+                or "-->" in code
+                or "->>" in code
+                or ("participant " in code and ("as " in code or ":" in code))
+            ):
                 return False
             else:
                 return True
 
         plantuml_weak_indicators = [
-            "boundary ", "control ", "entity ", "database ", 
-            "collections ", "queue "
+            "boundary ",
+            "control ",
+            "entity ",
+            "database ",
+            "collections ",
+            "queue ",
         ]
 
         for indicator in plantuml_weak_indicators:
@@ -52,17 +66,17 @@ class PlantUMLRenderer(BaseRenderer):
     def convert_plantuml_to_dot(self, plantuml_code):
         """Convert basic PlantUML to DOT notation for VizJS"""
         clean_code = self.clean_code(plantuml_code)
-        lines = clean_code.split('\n')
+        lines = clean_code.split("\n")
 
-        if any('participant' in line or 'actor' in line or '->' in line for line in lines):
+        if any("participant" in line or "actor" in line or "->" in line for line in lines):
             return self._convert_sequence_to_dot(lines)
-        elif any('class' in line for line in lines):
+        elif any("class" in line for line in lines):
             return self._convert_class_to_dot(lines)
         else:
-            return '''digraph G {
+            return """digraph G {
   node [style=filled, fillcolor=white];
   "PlantUML" -> "Local Rendering";
-}'''
+}"""
 
     def _convert_sequence_to_dot(self, lines):
         """Convert PlantUML sequence diagram to DOT"""
@@ -71,27 +85,27 @@ class PlantUMLRenderer(BaseRenderer):
 
         for line in lines:
             line = line.strip()
-            if line.startswith('participant') or line.startswith('actor'):
+            if line.startswith("participant") or line.startswith("actor"):
                 name = line.split()[1].strip('"')
-                if ' as ' in line:
-                    name = line.split(' as ')[1].strip().strip('"')
+                if " as " in line:
+                    name = line.split(" as ")[1].strip().strip('"')
                 participants.append(name)
-            elif '->' in line:
-                parts = line.split('->')
+            elif "->" in line:
+                parts = line.split("->")
                 if len(parts) == 2:
                     from_p = parts[0].strip()
                     to_part = parts[1].strip()
-                    if ':' in to_part:
-                        to_p = to_part.split(':')[0].strip()
-                        label = to_part.split(':', 1)[1].strip()
+                    if ":" in to_part:
+                        to_p = to_part.split(":")[0].strip()
+                        label = to_part.split(":", 1)[1].strip()
                     else:
                         to_p = to_part
                         label = ""
                     connections.append((from_p, to_p, label))
 
-        dot = 'digraph sequence {\n'
-        dot += '  rankdir=LR;\n'
-        dot += '  node [shape=box, style=filled, fillcolor=white];\n'
+        dot = "digraph sequence {\n"
+        dot += "  rankdir=LR;\n"
+        dot += "  node [shape=box, style=filled, fillcolor=white];\n"
 
         for p in participants:
             dot += f'  "{p}";\n'
@@ -102,7 +116,7 @@ class PlantUMLRenderer(BaseRenderer):
             else:
                 dot += f'  "{from_p}" -> "{to_p}";\n'
 
-        dot += '}'
+        dot += "}"
         return dot
 
     def _convert_class_to_dot(self, lines):
@@ -112,15 +126,15 @@ class PlantUMLRenderer(BaseRenderer):
 
         for line in lines:
             line = line.strip()
-            if line.startswith('class '):
-                class_name = line.split()[1].split('{')[0].strip()
+            if line.startswith("class "):
+                class_name = line.split()[1].split("{")[0].strip()
                 classes.append(class_name)
-            elif '<|--' in line:
-                parts = line.split('<|--')
+            elif "<|--" in line:
+                parts = line.split("<|--")
                 relationships.append((parts[1].strip(), parts[0].strip()))
 
-        dot = 'digraph classes {\n'
-        dot += '  node [shape=record, style=filled, fillcolor=white];\n'
+        dot = "digraph classes {\n"
+        dot += "  node [shape=record, style=filled, fillcolor=white];\n"
 
         for cls in classes:
             dot += f'  "{cls}" [label="{cls}"];\n'
@@ -128,7 +142,7 @@ class PlantUMLRenderer(BaseRenderer):
         for parent, child in relationships:
             dot += f'  "{parent}" -> "{child}" [arrowhead=empty];\n'
 
-        dot += '}'
+        dot += "}"
         return dot
 
     def render_html(self, code, **kwargs):

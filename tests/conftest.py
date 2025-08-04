@@ -1,18 +1,19 @@
 """
 Pytest configuration and fixtures for diagram-renderer tests
 """
-import pytest
-from pathlib import Path
-import tempfile
-import os
+
 import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from diagram_renderer.renderers import MermaidRenderer, PlantUMLRenderer, GraphvizRenderer
 from diagram_renderer import DiagramRenderer
+from diagram_renderer.renderers import GraphvizRenderer, MermaidRenderer, PlantUMLRenderer
 
 
 @pytest.fixture
@@ -151,11 +152,11 @@ def sample_graphviz_flowchart():
 digraph workflow {
     rankdir=TD
     node [shape=box]
-    
+
     Start [shape=ellipse]
     Process [label="Process Data"]
     End [shape=ellipse]
-    
+
     Start -> Process
     Process -> End
 }
@@ -189,10 +190,10 @@ def static_js_exists():
     mermaid_exists = (static_dir / "mermaid.min.js").exists()
     viz_lite_exists = (static_dir / "viz-lite.js").exists()
     viz_full_exists = (static_dir / "viz-full.js").exists()
-    
+
     return {
-        'mermaid': mermaid_exists,
-        'plantuml': viz_lite_exists and viz_full_exists,
-        'graphviz': viz_lite_exists and viz_full_exists,
-        'all': mermaid_exists and viz_lite_exists and viz_full_exists
+        "mermaid": mermaid_exists,
+        "plantuml": viz_lite_exists and viz_full_exists,
+        "graphviz": viz_lite_exists and viz_full_exists,
+        "all": mermaid_exists and viz_lite_exists and viz_full_exists,
     }
