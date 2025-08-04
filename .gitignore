@@ -14,5 +14,6 @@ todo.md
 
 # Generated test files
 *.html
+!diagram_renderer/renderers/templates/*.html
 diagram.*
 mermaid-test.*
