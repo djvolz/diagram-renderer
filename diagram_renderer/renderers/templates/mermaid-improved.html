@@ -329,7 +329,7 @@
         function zoomOut() {
             if (panzoomInstance) {
                 const transform = panzoomInstance.getTransform();
-                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 0.8);
+                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale / 1.2);
             }
         }
 
