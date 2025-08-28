@@ -86,7 +86,7 @@ class MermaidRenderer(BaseRenderer):
 
         # Mermaid-specific rendering logic
         mermaid_rendering_script = f"""
-        // Mermaid-specific rendering
+        // Mermaid rendering
         async function renderDiagram() {{
             try {{
                 loading.style.display = 'flex';
@@ -136,8 +136,7 @@ class MermaidRenderer(BaseRenderer):
                 `;
                 diagramContent.style.display = 'block';
             }}
-        }}
-        """
+        }}"""
 
         # Replace template variables
         html = template.replace("{js_content}", mermaid_js_content)
@@ -145,11 +144,21 @@ class MermaidRenderer(BaseRenderer):
         html = html.replace("{diagram_content}", f'<div class="mermaid">{clean_code}</div>')
         html = html.replace("{escaped_original}", escaped_original)
 
-        # Insert Mermaid-specific rendering script before the closing script tag
-        html = html.replace(
-            "        // Diagram rendering function",
-            mermaid_rendering_script + "\n        // Diagram rendering function",
-        )
+        # Replace the default renderDiagram function with Mermaid-specific one
+        default_render_function = """        // Diagram rendering function - to be overridden by specific renderers
+        function renderDiagram() {
+            // Default implementation - just show the content
+            loading.style.display = 'none';
+            diagramContent.style.display = 'block';
+
+            // Initialize pan/zoom after content is ready
+            setTimeout(() => {
+                initializePanZoom();
+                diagramReady = true;
+            }, 100);
+        }"""
+
+        html = html.replace(default_render_function, mermaid_rendering_script)
 
         return html
 

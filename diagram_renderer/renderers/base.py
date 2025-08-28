@@ -157,6 +157,8 @@ class BaseRenderer(ABC):
             return "<div>Error: Panzoom.js not available</div>"
 
         # Escape original code for JavaScript
+        import json
+
         escaped_original = json.dumps(original_code)
 
         # Get unified template
@@ -165,8 +167,7 @@ class BaseRenderer(ABC):
             return "<div>Error: Unified template not available</div>"
 
         # Generic rendering script for pre-rendered SVG
-        rendering_script = f"""
-        // Generic SVG rendering
+        rendering_script = f"""        // VizJS rendering
         function renderDiagram() {{
             try {{
                 loading.style.display = 'none';
@@ -193,8 +194,7 @@ class BaseRenderer(ABC):
                 `;
                 diagramContent.style.display = 'block';
             }}
-        }}
-        """
+        }}"""
 
         # Replace template variables
         html = template.replace("{js_content}", "")  # No additional JS needed for pre-rendered SVG
@@ -202,10 +202,20 @@ class BaseRenderer(ABC):
         html = html.replace("{diagram_content}", "")  # Content will be set by JS
         html = html.replace("{escaped_original}", escaped_original)
 
-        # Insert rendering script
-        html = html.replace(
-            "        // Diagram rendering function",
-            rendering_script + "\n        // Diagram rendering function",
-        )
+        # Replace the default renderDiagram function
+        default_render_function = """        // Diagram rendering function - to be overridden by specific renderers
+        function renderDiagram() {
+            // Default implementation - just show the content
+            loading.style.display = 'none';
+            diagramContent.style.display = 'block';
+
+            // Initialize pan/zoom after content is ready
+            setTimeout(() => {
+                initializePanZoom();
+                diagramReady = true;
+            }, 100);
+        }"""
+
+        html = html.replace(default_render_function, rendering_script)
 
         return html
