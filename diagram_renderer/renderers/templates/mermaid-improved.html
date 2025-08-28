@@ -200,7 +200,7 @@
             visibility: hidden;
             position: absolute;
             z-index: 1001;
-            bottom: 120%;
+            top: 120%;
             right: 0;
             background-color: var(--button-bg);
             color: var(--text-color);
@@ -213,6 +213,13 @@
             box-shadow: 0 4px 12px var(--shadow-color);
             opacity: 0;
             transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        /* Special positioning for tooltips that might go off-screen */
+        .controls-overlay .tooltip {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .control-btn:hover .tooltip {
