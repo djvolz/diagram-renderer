@@ -222,7 +222,7 @@
         /* Success feedback */
         .success-feedback {
             position: absolute;
-            top: -40px;
+            top: 100%;
             right: 0;
             background: #28a745;
             color: white;
@@ -231,9 +231,11 @@
             font-size: 12px;
             font-weight: 500;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(-10px);
             transition: all 0.3s ease;
             pointer-events: none;
+            margin-top: 4px;
+            white-space: nowrap;
         }
 
         .success-feedback.show {
