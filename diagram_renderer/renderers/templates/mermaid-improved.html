@@ -33,35 +33,6 @@
             --control-bg: rgba(255, 255, 255, 0.95);
         }
 
-        /* Dark theme */
-        body.dark-theme {
-            --bg-color: #0d1117;
-            --text-color: #c9d1d9;
-            --border-color: #30363d;
-            --button-bg: #21262d;
-            --button-hover-bg: #30363d;
-            --button-active-bg: #282e33;
-            --button-border: #30363d;
-            --button-hover-border: #6e7681;
-            --shadow-color: rgba(0,0,0,0.3);
-            --control-bg: rgba(33, 38, 45, 0.95);
-        }
-
-        /* Auto-detect system theme */
-        @media (prefers-color-scheme: dark) {
-            body:not(.light-theme) {
-                --bg-color: #0d1117;
-                --text-color: #c9d1d9;
-                --border-color: #30363d;
-                --button-bg: #21262d;
-                --button-hover-bg: #30363d;
-                --button-active-bg: #282e33;
-                --button-border: #30363d;
-                --button-hover-border: #6e7681;
-                --shadow-color: rgba(0,0,0,0.3);
-                --control-bg: rgba(33, 38, 45, 0.95);
-            }
-        }
 
         .diagram-container {
             position: relative;
@@ -181,11 +152,6 @@
             word-break: break-word;
         }
 
-        .dark-theme .error-message {
-            color: #f85149;
-            background-color: #310a0a;
-            border-color: #6f1f1f;
-        }
 
         .loading {
             display: flex;
@@ -279,10 +245,6 @@
                         <div class="tooltip">Copy Source</div>
                         <div class="success-feedback" id="copy-feedback">Copied!</div>
                     </button>
-                    <button class="control-btn" onclick="toggleTheme()" title="Toggle Theme">
-                        🌓
-                        <div class="tooltip">Toggle Theme</div>
-                    </button>
                 </div>
             </div>
 
@@ -330,53 +292,6 @@
         const mermaidDiagram = document.getElementById('mermaid-diagram');
         const loading = document.getElementById('loading');
 
-        // Theme management
-        function detectSystemTheme() {
-            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
-
-        function applyTheme(theme) {
-            document.body.classList.remove('light-theme', 'dark-theme');
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-            } else if (theme === 'light') {
-                document.body.classList.add('light-theme');
-            }
-            // Auto theme uses CSS @media queries
-        }
-
-        function toggleTheme() {
-            const currentTheme = localStorage.getItem('diagram-theme') || 'auto';
-            let newTheme;
-
-            switch (currentTheme) {
-                case 'auto':
-                    newTheme = 'light';
-                    break;
-                case 'light':
-                    newTheme = 'dark';
-                    break;
-                case 'dark':
-                    newTheme = 'auto';
-                    break;
-                default:
-                    newTheme = 'auto';
-            }
-
-            localStorage.setItem('diagram-theme', newTheme);
-            applyTheme(newTheme);
-
-            // Re-render Mermaid with new theme
-            if (diagramReady) {
-                renderMermaid();
-            }
-        }
-
-        // Initialize theme
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('diagram-theme') || 'auto';
-            applyTheme(savedTheme);
-        }
 
         // Pan/Zoom functions using panzoom library
         function initializePanZoom() {
@@ -406,19 +321,22 @@
 
         function zoomIn() {
             if (panzoomInstance) {
-                panzoomInstance.zoom(1.2, { animate: true });
+                const transform = panzoomInstance.getTransform();
+                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 1.2);
             }
         }
 
         function zoomOut() {
             if (panzoomInstance) {
-                panzoomInstance.zoom(0.8, { animate: true });
+                const transform = panzoomInstance.getTransform();
+                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 0.8);
             }
         }
 
         function resetView() {
             if (panzoomInstance) {
-                panzoomInstance.reset({ animate: true });
+                panzoomInstance.moveTo(0, 0);
+                panzoomInstance.zoomAbs(0, 0, 1);
             }
         }
 
@@ -498,7 +416,7 @@
 
             const img = new Image();
             img.onload = function() {
-                ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#0d1117' : '#ffffff';
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
@@ -582,8 +500,7 @@
                 loading.style.display = 'flex';
                 mermaidDiagram.style.display = 'none';
 
-                const isDark = document.body.classList.contains('dark-theme') ||
-                             (!document.body.classList.contains('light-theme') && detectSystemTheme());
+                const isDark = false; // Always use light theme
 
                 mermaid.initialize({
                     startOnLoad: false,
@@ -633,17 +550,7 @@
 
         // Initialize everything when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            initializeTheme();
             renderMermaid();
-
-            // Listen for system theme changes
-            if (window.matchMedia) {
-                window.matchMedia('(prefers-color-scheme: dark)').addListener(() => {
-                    if (localStorage.getItem('diagram-theme') === 'auto' || !localStorage.getItem('diagram-theme')) {
-                        setTimeout(() => renderMermaid(), 100);
-                    }
-                });
-            }
         });
     </script>
 </body>
