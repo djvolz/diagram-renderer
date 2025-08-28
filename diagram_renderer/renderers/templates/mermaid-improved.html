@@ -53,6 +53,17 @@
             align-items: flex-end;
         }
 
+        .bottom-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
         .control-group {
             background: var(--control-bg);
             border: 1px solid var(--border-color);
@@ -248,7 +259,17 @@
                 </div>
             </div>
 
-            <!-- Zoom controls -->
+        </div>
+
+        <div class="mermaid-wrapper" id="mermaid-wrapper">
+            <div class="loading" id="loading">Rendering diagram...</div>
+            <div class="mermaid" id="mermaid-diagram">
+{clean_code}
+            </div>
+        </div>
+
+        <!-- Bottom right zoom and view controls -->
+        <div class="bottom-controls">
             <div class="control-group">
                 <div class="zoom-controls">
                     <button class="control-btn" onclick="zoomIn()" title="Zoom In">
@@ -263,24 +284,11 @@
                         🏠
                         <div class="tooltip">Reset View</div>
                     </button>
-                </div>
-            </div>
-
-            <!-- Fullscreen control -->
-            <div class="control-group">
-                <div class="zoom-controls">
                     <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">
                         ⛶
                         <div class="tooltip">Fullscreen</div>
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <div class="mermaid-wrapper" id="mermaid-wrapper">
-            <div class="loading" id="loading">Rendering diagram...</div>
-            <div class="mermaid" id="mermaid-diagram">
-{clean_code}
             </div>
         </div>
     </div>
