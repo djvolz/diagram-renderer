@@ -270,18 +270,10 @@
             </div>
         </div>
 
-        <!-- Bottom right zoom and view controls -->
+        <!-- Bottom right view controls -->
         <div class="bottom-controls">
             <div class="control-group">
                 <div class="zoom-controls">
-                    <button class="control-btn" onclick="zoomIn(); this.blur();" title="Zoom In">
-                        ➕
-                        <div class="tooltip">Zoom In</div>
-                    </button>
-                    <button class="control-btn" onclick="zoomOut(); this.blur();" title="Zoom Out">
-                        ➖
-                        <div class="tooltip">Zoom Out</div>
-                    </button>
                     <button class="control-btn" onclick="resetView(); this.blur();" title="Reset View">
                         🏠
                         <div class="tooltip">Reset View</div>
@@ -329,19 +321,6 @@
             }
         }
 
-        function zoomIn() {
-            if (panzoomInstance) {
-                const transform = panzoomInstance.getTransform();
-                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 1.2);
-            }
-        }
-
-        function zoomOut() {
-            if (panzoomInstance) {
-                const transform = panzoomInstance.getTransform();
-                panzoomInstance.zoomTo(transform.x, transform.y, transform.scale / 1.2);
-            }
-        }
 
         function resetView() {
             if (panzoomInstance) {
