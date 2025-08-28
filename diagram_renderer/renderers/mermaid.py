@@ -61,7 +61,7 @@ class MermaidRenderer(BaseRenderer):
             return self.render_html_improved(code, **kwargs)
 
     def render_html_improved(self, code, **kwargs):
-        """Generate HTML with improved UI using embedded Mermaid.js and panzoom"""
+        """Generate HTML with improved UI using unified template"""
         mermaid_js_content = self.get_static_js_content(self.js_filename)
         panzoom_js_content = self.get_static_js_content("panzoom.min.js")
 
@@ -79,16 +79,78 @@ class MermaidRenderer(BaseRenderer):
 
         escaped_original = json.dumps(code)
 
-        # Get improved template and substitute variables
-        template = self.get_template_content("mermaid-improved.html")
+        # Get unified template
+        template = self.get_template_content("unified.html")
         if not template:
-            return "<div>Error: Improved Mermaid template not available</div>"
+            return "<div>Error: Unified template not available</div>"
 
-        # Use replace instead of format to avoid issues with CSS curly braces
-        html = template.replace("{mermaid_js_content}", mermaid_js_content)
+        # Mermaid-specific rendering logic
+        mermaid_rendering_script = f"""
+        // Mermaid-specific rendering
+        async function renderDiagram() {{
+            try {{
+                loading.style.display = 'flex';
+                diagramContent.style.display = 'none';
+
+                mermaid.initialize({{
+                    startOnLoad: false,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    flowchart: {{
+                        useMaxWidth: false,
+                        htmlLabels: true
+                    }},
+                    sequence: {{
+                        useMaxWidth: false
+                    }},
+                    gantt: {{
+                        useMaxWidth: false
+                    }}
+                }});
+
+                const code = `{clean_code}`;
+                const {{ svg }} = await mermaid.render('mermaid-diagram-svg', code);
+
+                diagramContent.innerHTML = svg;
+                loading.style.display = 'none';
+                diagramContent.style.display = 'block';
+
+                // Initialize pan/zoom after rendering
+                setTimeout(() => {{
+                    initializePanZoom();
+                    diagramReady = true;
+                }}, 100);
+
+            }} catch (error) {{
+                console.error('Mermaid rendering error:', error);
+                loading.style.display = 'none';
+                diagramContent.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error rendering diagram:</strong><br>
+                        ${{error.message}}
+                        <br><br>
+                        <strong>Original code:</strong><br>
+                        <pre>{escaped_original}</pre>
+                    </div>
+                `;
+                diagramContent.style.display = 'block';
+            }}
+        }}
+        """
+
+        # Replace template variables
+        html = template.replace("{js_content}", mermaid_js_content)
         html = html.replace("{panzoom_js_content}", panzoom_js_content)
-        html = html.replace("{clean_code}", clean_code)
+        html = html.replace("{diagram_content}", f'<div class="mermaid">{clean_code}</div>')
         html = html.replace("{escaped_original}", escaped_original)
+
+        # Insert Mermaid-specific rendering script before the closing script tag
+        html = html.replace(
+            "        // Diagram rendering function",
+            mermaid_rendering_script + "\n        // Diagram rendering function",
+        )
+
         return html
 
     def _render_html_legacy(self, code, **kwargs):
