@@ -231,6 +231,84 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .help-modal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .help-content {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+
+        .help-content h3 {
+            margin: 0 0 16px 0;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .help-content .shortcuts {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 16px;
+            margin-bottom: 16px;
+        }
+
+        .help-content .shortcut-key {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: var(--button-hover-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .help-content .shortcut-desc {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .help-close {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--button-border);
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            float: right;
+        }
+
+        .help-close:hover {
+            background: var(--button-hover-bg);
+            border-color: var(--button-hover-border);
+        }
     </style>
     <script>
 {mermaid_js_content}
@@ -258,6 +336,10 @@
                         <div class="tooltip">Copy Source</div>
                         <div class="success-feedback" id="copy-feedback">Copied!</div>
                     </button>
+                    <button class="control-btn" onclick="toggleHelp(); this.blur();" title="Keyboard Shortcuts">
+                        ❓
+                        <div class="tooltip">Help</div>
+                    </button>
                 </div>
             </div>
 
@@ -267,6 +349,45 @@
             <div class="loading" id="loading">Rendering diagram...</div>
             <div class="mermaid" id="mermaid-diagram">
 {clean_code}
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="help-modal" id="help-modal">
+            <div class="help-content">
+                <h3>Keyboard Shortcuts</h3>
+                <div class="shortcuts">
+                    <span class="shortcut-key">Mouse Wheel</span>
+                    <span class="shortcut-desc">Zoom in/out</span>
+
+                    <span class="shortcut-key">Mouse Drag</span>
+                    <span class="shortcut-desc">Pan around</span>
+
+                    <span class="shortcut-key">Double Click</span>
+                    <span class="shortcut-desc">Zoom in</span>
+
+                    <span class="shortcut-key">+</span>
+                    <span class="shortcut-desc">Zoom in</span>
+
+                    <span class="shortcut-key">-</span>
+                    <span class="shortcut-desc">Zoom out</span>
+
+                    <span class="shortcut-key">0</span>
+                    <span class="shortcut-desc">Reset view</span>
+
+                    <span class="shortcut-key">F</span>
+                    <span class="shortcut-desc">Toggle fullscreen</span>
+
+                    <span class="shortcut-key">C</span>
+                    <span class="shortcut-desc">Copy source code</span>
+
+                    <span class="shortcut-key">?</span>
+                    <span class="shortcut-desc">Show/hide this help</span>
+
+                    <span class="shortcut-key">Esc</span>
+                    <span class="shortcut-desc">Close help or exit fullscreen</span>
+                </div>
+                <button class="help-close" onclick="toggleHelp()">Close</button>
             </div>
         </div>
 
@@ -337,6 +458,63 @@
                 document.exitFullscreen();
             }
         }
+
+        function toggleHelp() {
+            const helpModal = document.getElementById('help-modal');
+            helpModal.classList.toggle('show');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Don't trigger shortcuts if user is typing in an input field
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(e.key) {
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    if (panzoomInstance) {
+                        const transform = panzoomInstance.getTransform();
+                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 1.2);
+                    }
+                    break;
+                case '-':
+                    e.preventDefault();
+                    if (panzoomInstance) {
+                        const transform = panzoomInstance.getTransform();
+                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale / 1.2);
+                    }
+                    break;
+                case '0':
+                    e.preventDefault();
+                    resetView();
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'c':
+                case 'C':
+                    e.preventDefault();
+                    copyDiagram();
+                    break;
+                case '?':
+                    e.preventDefault();
+                    toggleHelp();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    if (document.getElementById('help-modal').classList.contains('show')) {
+                        toggleHelp();
+                    } else if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    }
+                    break;
+            }
+        });
 
         // Download functions
         function generateFileName(originalCode, extension, diagramType = 'mermaid') {
@@ -513,6 +691,13 @@
         // Initialize everything when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             renderMermaid();
+
+            // Close help modal when clicking outside
+            document.getElementById('help-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    toggleHelp();
+                }
+            });
         });
     </script>
 </body>
