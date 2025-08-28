@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Demo script showing the new Open WebUI-inspired Mermaid improvements"""
+"""Demo script showing the improved Mermaid renderer"""
 
 import tempfile
 import webbrowser
@@ -13,7 +13,7 @@ def create_demo():
     # Sample Mermaid diagram
     mermaid_code = """
     graph TD
-        A[🚀 Open WebUI Improvements] --> B{What's New?}
+        A[🚀 Improved Mermaid Renderer] --> B{What's New?}
         B --> C[🎨 Modern UI Design]
         B --> D[🌓 Theme Toggle]
         B --> E[📱 Better Controls]
