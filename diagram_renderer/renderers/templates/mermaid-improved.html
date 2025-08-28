@@ -102,13 +102,6 @@
             gap: 4px;
         }
 
-        .pan-controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 2px;
-            width: 120px;
-        }
 
         .control-btn {
             background: var(--button-bg);
@@ -150,12 +143,6 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
         }
 
-        /* Pan control positioning */
-        .pan-up { grid-column: 2; grid-row: 1; }
-        .pan-left { grid-column: 1; grid-row: 2; }
-        .pan-center { grid-column: 2; grid-row: 2; }
-        .pan-right { grid-column: 3; grid-row: 2; }
-        .pan-down { grid-column: 2; grid-row: 3; }
 
         .mermaid-wrapper {
             width: 100%;
@@ -310,28 +297,12 @@
                 </div>
             </div>
 
-            <!-- Pan controls -->
+            <!-- Fullscreen control -->
             <div class="control-group">
-                <div class="pan-controls">
-                    <button class="control-btn pan-up" onclick="panUp()" title="Pan Up">
-                        ⬆️
-                        <div class="tooltip">Pan Up</div>
-                    </button>
-                    <button class="control-btn pan-left" onclick="panLeft()" title="Pan Left">
-                        ⬅️
-                        <div class="tooltip">Pan Left</div>
-                    </button>
-                    <button class="control-btn pan-center" onclick="toggleFullscreen()" title="Fullscreen">
+                <div class="zoom-controls">
+                    <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">
                         ⛶
                         <div class="tooltip">Fullscreen</div>
-                    </button>
-                    <button class="control-btn pan-right" onclick="panRight()" title="Pan Right">
-                        ➡️
-                        <div class="tooltip">Pan Right</div>
-                    </button>
-                    <button class="control-btn pan-down" onclick="panDown()" title="Pan Down">
-                        ⬇️
-                        <div class="tooltip">Pan Down</div>
                     </button>
                 </div>
             </div>
@@ -444,29 +415,6 @@
             }
         }
 
-        function panUp() {
-            if (panzoomInstance) {
-                panzoomInstance.pan(0, 50, { animate: true });
-            }
-        }
-
-        function panDown() {
-            if (panzoomInstance) {
-                panzoomInstance.pan(0, -50, { animate: true });
-            }
-        }
-
-        function panLeft() {
-            if (panzoomInstance) {
-                panzoomInstance.pan(50, 0, { animate: true });
-            }
-        }
-
-        function panRight() {
-            if (panzoomInstance) {
-                panzoomInstance.pan(-50, 0, { animate: true });
-            }
-        }
 
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
