@@ -101,6 +101,12 @@
             transition: all 0.1s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             position: relative;
+            outline: none;
+        }
+
+        .control-btn:focus {
+            outline: none;
+            border-color: var(--button-hover-border);
         }
 
         .control-btn:hover {
@@ -239,19 +245,15 @@
             <!-- Top action controls -->
             <div class="control-group">
                 <div class="top-controls">
-                    <button class="control-btn" onclick="downloadPNG()" title="Download PNG">
+                    <button class="control-btn" onclick="downloadPNG(); this.blur();" title="Download PNG">
                         🖼️
                         <div class="tooltip">Download PNG</div>
                     </button>
-                    <button class="control-btn" onclick="downloadSVG()" title="Download SVG">
-                        📄
-                        <div class="tooltip">Download SVG</div>
-                    </button>
-                    <button class="control-btn" onclick="downloadCode()" title="Download Source">
+                    <button class="control-btn" onclick="downloadCode(); this.blur();" title="Download Source">
                         &lt;/&gt;
                         <div class="tooltip">Download Source</div>
                     </button>
-                    <button class="control-btn" onclick="copyDiagram()" title="Copy Source">
+                    <button class="control-btn" onclick="copyDiagram(); this.blur();" title="Copy Source">
                         📋
                         <div class="tooltip">Copy Source</div>
                         <div class="success-feedback" id="copy-feedback">Copied!</div>
@@ -272,19 +274,19 @@
         <div class="bottom-controls">
             <div class="control-group">
                 <div class="zoom-controls">
-                    <button class="control-btn" onclick="zoomIn()" title="Zoom In">
+                    <button class="control-btn" onclick="zoomIn(); this.blur();" title="Zoom In">
                         ➕
                         <div class="tooltip">Zoom In</div>
                     </button>
-                    <button class="control-btn" onclick="zoomOut()" title="Zoom Out">
+                    <button class="control-btn" onclick="zoomOut(); this.blur();" title="Zoom Out">
                         ➖
                         <div class="tooltip">Zoom Out</div>
                     </button>
-                    <button class="control-btn" onclick="resetView()" title="Reset View">
+                    <button class="control-btn" onclick="resetView(); this.blur();" title="Reset View">
                         🏠
                         <div class="tooltip">Reset View</div>
                     </button>
-                    <button class="control-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                    <button class="control-btn" onclick="toggleFullscreen(); this.blur();" title="Fullscreen">
                         ⛶
                         <div class="tooltip">Fullscreen</div>
                     </button>
@@ -446,33 +448,6 @@
             img.src = dataUrl;
         }
 
-        function downloadSVG() {
-            if (!diagramReady) {
-                alert('Diagram is still loading. Please wait a moment and try again.');
-                return;
-            }
-
-            const svgElement = mermaidDiagram.querySelector('svg');
-            if (!svgElement) {
-                alert('No diagram to download');
-                return;
-            }
-
-            let svgData = new XMLSerializer().serializeToString(svgElement);
-
-            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
-                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-            }
-
-            const originalCode = {escaped_original};
-            const fileName = generateFileName(originalCode, '.svg');
-            const blob = new Blob([svgData], { type: 'image/svg+xml' });
-            const link = document.createElement('a');
-            link.download = fileName;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            URL.revokeObjectURL(link.href);
-        }
 
         function downloadCode() {
             const originalCode = {escaped_original};
