@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color, #ffffff);
+            color: var(--text-color, #24292e);
+            height: 100vh;
+            width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+            position: relative;
+
+            /* CSS variables for theming */
+            --bg-color: #ffffff;
+            --text-color: #24292e;
+            --border-color: #d0d7de;
+            --button-bg: #ffffff;
+            --button-hover-bg: #f6f8fa;
+            --button-active-bg: #e1e7ef;
+            --button-border: #d0d7de;
+            --button-hover-border: #8c959f;
+            --shadow-color: rgba(0,0,0,0.12);
+            --control-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Dark theme */
+        body.dark-theme {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --button-bg: #21262d;
+            --button-hover-bg: #30363d;
+            --button-active-bg: #282e33;
+            --button-border: #30363d;
+            --button-hover-border: #6e7681;
+            --shadow-color: rgba(0,0,0,0.3);
+            --control-bg: rgba(33, 38, 45, 0.95);
+        }
+
+        /* Auto-detect system theme */
+        @media (prefers-color-scheme: dark) {
+            body:not(.light-theme) {
+                --bg-color: #0d1117;
+                --text-color: #c9d1d9;
+                --border-color: #30363d;
+                --button-bg: #21262d;
+                --button-hover-bg: #30363d;
+                --button-active-bg: #282e33;
+                --button-border: #30363d;
+                --button-hover-border: #6e7681;
+                --shadow-color: rgba(0,0,0,0.3);
+                --control-bg: rgba(33, 38, 45, 0.95);
+            }
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            background: var(--control-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            backdrop-filter: blur(8px);
+        }
+
+        .top-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pan-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            width: 120px;
+        }
+
+        .control-btn {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--button-border);
+            border-radius: 6px;
+            min-width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .control-btn:hover {
+            background: var(--button-hover-bg);
+            border-color: var(--button-hover-border);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px var(--shadow-color);
+        }
+
+        .control-btn:active {
+            background: var(--button-active-bg);
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .control-btn:disabled {
+            background: var(--button-bg);
+            color: #8c959f;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+
+        /* Pan control positioning */
+        .pan-up { grid-column: 2; grid-row: 1; }
+        .pan-left { grid-column: 1; grid-row: 2; }
+        .pan-center { grid-column: 2; grid-row: 2; }
+        .pan-right { grid-column: 3; grid-row: 2; }
+        .pan-down { grid-column: 2; grid-row: 3; }
+
+        .mermaid-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .mermaid {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: visible;
+        }
+
+        .mermaid svg {
+            max-width: none;
+            max-height: none;
+            width: auto;
+            height: auto;
+        }
+
+        .error-message {
+            color: #d1242f;
+            background-color: #ffebee;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .dark-theme .error-message {
+            color: #f85149;
+            background-color: #310a0a;
+            border-color: #6f1f1f;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 16px;
+            color: var(--text-color);
+        }
+
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            z-index: 1001;
+            bottom: 120%;
+            right: 0;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        .control-btn:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Success feedback */
+        .success-feedback {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .success-feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+    <script>
+{mermaid_js_content}
+    </script>
+    <script>
+{panzoom_js_content}
+    </script>
+</head>
+<body>
+    <div class="diagram-container" id="diagram-container">
+        <div class="controls-overlay">
+            <!-- Top action controls -->
+            <div class="control-group">
+                <div class="top-controls">
+                    <button class="control-btn" onclick="downloadPNG()" title="Download PNG">
+                        🖼️
+                        <div class="tooltip">Download PNG</div>
+                    </button>
+                    <button class="control-btn" onclick="downloadSVG()" title="Download SVG">
+                        📄
+                        <div class="tooltip">Download SVG</div>
+                    </button>
+                    <button class="control-btn" onclick="downloadCode()" title="Download Source">
+                        &lt;/&gt;
+                        <div class="tooltip">Download Source</div>
+                    </button>
+                    <button class="control-btn" onclick="copyDiagram()" title="Copy Source">
+                        📋
+                        <div class="tooltip">Copy Source</div>
+                        <div class="success-feedback" id="copy-feedback">Copied!</div>
+                    </button>
+                    <button class="control-btn" onclick="toggleTheme()" title="Toggle Theme">
+                        🌓
+                        <div class="tooltip">Toggle Theme</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Zoom controls -->
+            <div class="control-group">
+                <div class="zoom-controls">
+                    <button class="control-btn" onclick="zoomIn()" title="Zoom In">
+                        ➕
+                        <div class="tooltip">Zoom In</div>
+                    </button>
+                    <button class="control-btn" onclick="zoomOut()" title="Zoom Out">
+                        ➖
+                        <div class="tooltip">Zoom Out</div>
+                    </button>
+                    <button class="control-btn" onclick="resetView()" title="Reset View">
+                        🏠
+                        <div class="tooltip">Reset View</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pan controls -->
+            <div class="control-group">
+                <div class="pan-controls">
+                    <button class="control-btn pan-up" onclick="panUp()" title="Pan Up">
+                        ⬆️
+                        <div class="tooltip">Pan Up</div>
+                    </button>
+                    <button class="control-btn pan-left" onclick="panLeft()" title="Pan Left">
+                        ⬅️
+                        <div class="tooltip">Pan Left</div>
+                    </button>
+                    <button class="control-btn pan-center" onclick="toggleFullscreen()" title="Fullscreen">
+                        ⛶
+                        <div class="tooltip">Fullscreen</div>
+                    </button>
+                    <button class="control-btn pan-right" onclick="panRight()" title="Pan Right">
+                        ➡️
+                        <div class="tooltip">Pan Right</div>
+                    </button>
+                    <button class="control-btn pan-down" onclick="panDown()" title="Pan Down">
+                        ⬇️
+                        <div class="tooltip">Pan Down</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mermaid-wrapper" id="mermaid-wrapper">
+            <div class="loading" id="loading">Rendering diagram...</div>
+            <div class="mermaid" id="mermaid-diagram">
+{clean_code}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let panzoomInstance = null;
+        let diagramReady = false;
+        const mermaidWrapper = document.getElementById('mermaid-wrapper');
+        const mermaidDiagram = document.getElementById('mermaid-diagram');
+        const loading = document.getElementById('loading');
+
+        // Theme management
+        function detectSystemTheme() {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        function applyTheme(theme) {
+            document.body.classList.remove('light-theme', 'dark-theme');
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+            } else if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            // Auto theme uses CSS @media queries
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('diagram-theme') || 'auto';
+            let newTheme;
+
+            switch (currentTheme) {
+                case 'auto':
+                    newTheme = 'light';
+                    break;
+                case 'light':
+                    newTheme = 'dark';
+                    break;
+                case 'dark':
+                    newTheme = 'auto';
+                    break;
+                default:
+                    newTheme = 'auto';
+            }
+
+            localStorage.setItem('diagram-theme', newTheme);
+            applyTheme(newTheme);
+
+            // Re-render Mermaid with new theme
+            if (diagramReady) {
+                renderMermaid();
+            }
+        }
+
+        // Initialize theme
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('diagram-theme') || 'auto';
+            applyTheme(savedTheme);
+        }
+
+        // Pan/Zoom functions using panzoom library
+        function initializePanZoom() {
+            if (panzoomInstance) {
+                panzoomInstance.dispose();
+            }
+
+            const svgElement = mermaidDiagram.querySelector('svg');
+            if (svgElement) {
+                panzoomInstance = window.panzoom(svgElement, {
+                    maxZoom: 4,
+                    minZoom: 0.1,
+                    bounds: true,
+                    boundsPadding: 0.1,
+                    zoomSpeed: 0.1,
+                    panOnlyWhenZoomed: false,
+                    contain: 'outside'
+                });
+
+                // Enable mouse wheel zooming
+                svgElement.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    panzoomInstance.zoomWithWheel(e);
+                });
+            }
+        }
+
+        function zoomIn() {
+            if (panzoomInstance) {
+                panzoomInstance.zoom(1.2, { animate: true });
+            }
+        }
+
+        function zoomOut() {
+            if (panzoomInstance) {
+                panzoomInstance.zoom(0.8, { animate: true });
+            }
+        }
+
+        function resetView() {
+            if (panzoomInstance) {
+                panzoomInstance.reset({ animate: true });
+            }
+        }
+
+        function panUp() {
+            if (panzoomInstance) {
+                panzoomInstance.pan(0, 50, { animate: true });
+            }
+        }
+
+        function panDown() {
+            if (panzoomInstance) {
+                panzoomInstance.pan(0, -50, { animate: true });
+            }
+        }
+
+        function panLeft() {
+            if (panzoomInstance) {
+                panzoomInstance.pan(50, 0, { animate: true });
+            }
+        }
+
+        function panRight() {
+            if (panzoomInstance) {
+                panzoomInstance.pan(-50, 0, { animate: true });
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Download functions
+        function generateFileName(originalCode, extension, diagramType = 'mermaid') {
+            const cleanCode = originalCode.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const skipWords = new Set([
+                'graph', 'td', 'lr', 'bt', 'rl', 'tb', 'sequencediagram', 'participant', 'as',
+                'actor', 'note', 'over', 'end', 'alt', 'else', 'loop', 'opt', 'par', 'and',
+                'mermaid', 'diagram', 'start', 'stop', 'digraph', 'strict', 'subgraph',
+                'node', 'edge', 'rankdir', 'bgcolor', 'fontname', 'fontsize', 'label',
+                'shape', 'color', 'style', 'startuml', 'enduml', 'skinparam', 'theme', 'include'
+            ]);
+
+            const words = cleanCode.split(' ')
+                .filter(word => word.length > 2 && !skipWords.has(word))
+                .slice(0, 3);
+
+            let baseName = diagramType + '-diagram';
+            if (words.length > 0) {
+                baseName = diagramType + '-' + words.join('-');
+                if (baseName.length > 30) {
+                    baseName = baseName.substring(0, 30);
+                }
+            }
+
+            return baseName + extension;
+        }
+
+        function downloadPNG() {
+            if (!diagramReady) {
+                alert('Diagram is still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            const svgElement = mermaidDiagram.querySelector('svg');
+            if (!svgElement) {
+                alert('No diagram to download');
+                return;
+            }
+
+            const svgClone = svgElement.cloneNode(true);
+            const bbox = svgElement.getBBox();
+            const width = bbox.width || 800;
+            const height = bbox.height || 600;
+
+            svgClone.setAttribute('width', width);
+            svgClone.setAttribute('height', height);
+            svgClone.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${width} ${height}`);
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            ctx.scale(2, 2);
+
+            let svgData = new XMLSerializer().serializeToString(svgClone);
+
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
+            const img = new Image();
+            img.onload = function() {
+                ctx.fillStyle = document.body.classList.contains('dark-theme') ? '#0d1117' : '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    const pngDataUrl = canvas.toDataURL('image/png');
+                    const originalCode = {escaped_original};
+                    const fileName = generateFileName(originalCode, '.png');
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = pngDataUrl;
+                    link.click();
+                } catch (error) {
+                    alert('Failed to create PNG. Security restrictions may prevent export.');
+                }
+            };
+            img.onerror = function() {
+                alert('Failed to generate PNG. The SVG may contain unsupported elements.');
+            };
+            img.src = dataUrl;
+        }
+
+        function downloadSVG() {
+            if (!diagramReady) {
+                alert('Diagram is still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            const svgElement = mermaidDiagram.querySelector('svg');
+            if (!svgElement) {
+                alert('No diagram to download');
+                return;
+            }
+
+            let svgData = new XMLSerializer().serializeToString(svgElement);
+
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            const originalCode = {escaped_original};
+            const fileName = generateFileName(originalCode, '.svg');
+            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function downloadCode() {
+            const originalCode = {escaped_original};
+            const fileName = generateFileName(originalCode, '.mmd');
+            const blob = new Blob([originalCode], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function copyDiagram() {
+            try {
+                const originalCode = {escaped_original};
+                navigator.clipboard.writeText(originalCode).then(() => {
+                    const feedback = document.getElementById('copy-feedback');
+                    feedback.classList.add('show');
+                    setTimeout(() => {
+                        feedback.classList.remove('show');
+                    }, 2000);
+                }).catch(() => {
+                    alert('Failed to copy source code to clipboard');
+                });
+            } catch (error) {
+                alert('Failed to copy source code');
+            }
+        }
+
+        // Mermaid rendering
+        async function renderMermaid() {
+            try {
+                loading.style.display = 'flex';
+                mermaidDiagram.style.display = 'none';
+
+                const isDark = document.body.classList.contains('dark-theme') ||
+                             (!document.body.classList.contains('light-theme') && detectSystemTheme());
+
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: isDark ? 'dark' : 'default',
+                    securityLevel: 'loose',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    flowchart: {
+                        useMaxWidth: false,
+                        htmlLabels: true
+                    },
+                    sequence: {
+                        useMaxWidth: false
+                    },
+                    gantt: {
+                        useMaxWidth: false
+                    }
+                });
+
+                const code = mermaidDiagram.textContent.trim();
+                const { svg } = await mermaid.render('mermaid-diagram-svg', code);
+
+                mermaidDiagram.innerHTML = svg;
+                loading.style.display = 'none';
+                mermaidDiagram.style.display = 'block';
+
+                // Initialize pan/zoom after rendering
+                setTimeout(() => {
+                    initializePanZoom();
+                    diagramReady = true;
+                }, 100);
+
+            } catch (error) {
+                console.error('Mermaid rendering error:', error);
+                loading.style.display = 'none';
+                mermaidDiagram.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error rendering diagram:</strong><br>
+                        ${error.message}
+                        <br><br>
+                        <strong>Original code:</strong><br>
+                        <pre>${{escaped_original}}</pre>
+                    </div>
+                `;
+                mermaidDiagram.style.display = 'block';
+            }
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+            renderMermaid();
+
+            // Listen for system theme changes
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addListener(() => {
+                    if (localStorage.getItem('diagram-theme') === 'auto' || !localStorage.getItem('diagram-theme')) {
+                        setTimeout(() => renderMermaid(), 100);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

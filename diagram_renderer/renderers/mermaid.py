@@ -51,7 +51,48 @@ class MermaidRenderer(BaseRenderer):
         return code.strip()
 
     def render_html(self, code, **kwargs):
-        """Generate HTML with embedded Mermaid.js"""
+        """Generate HTML with improved UI using embedded Mermaid.js and panzoom"""
+        # Use the improved template by default
+        use_legacy = kwargs.get("use_legacy", False)
+
+        if use_legacy:
+            return self._render_html_legacy(code, **kwargs)
+        else:
+            return self.render_html_improved(code, **kwargs)
+
+    def render_html_improved(self, code, **kwargs):
+        """Generate HTML with improved UI using embedded Mermaid.js and panzoom"""
+        mermaid_js_content = self.get_static_js_content(self.js_filename)
+        panzoom_js_content = self.get_static_js_content("panzoom.min.js")
+
+        if not mermaid_js_content:
+            return "<div>Error: Mermaid.js not available</div>"
+
+        if not panzoom_js_content:
+            return "<div>Error: Panzoom.js not available</div>"
+
+        # Clean mermaid code
+        clean_code = self.clean_code(code)
+
+        # Escape original code for JavaScript
+        import json
+
+        escaped_original = json.dumps(code)
+
+        # Get improved template and substitute variables
+        template = self.get_template_content("mermaid-improved.html")
+        if not template:
+            return "<div>Error: Improved Mermaid template not available</div>"
+
+        # Use replace instead of format to avoid issues with CSS curly braces
+        html = template.replace("{mermaid_js_content}", mermaid_js_content)
+        html = html.replace("{panzoom_js_content}", panzoom_js_content)
+        html = html.replace("{clean_code}", clean_code)
+        html = html.replace("{escaped_original}", escaped_original)
+        return html
+
+    def _render_html_legacy(self, code, **kwargs):
+        """Generate HTML with embedded Mermaid.js (legacy template)"""
         mermaid_js_content = self.get_static_js_content(self.js_filename)
 
         if not mermaid_js_content:
