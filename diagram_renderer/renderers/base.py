@@ -177,7 +177,7 @@ class BaseRenderer(ABC):
         if not template:
             return "<div>Error: Unified template not available</div>"
 
-        # VizJS rendering script
+        # VizJS rendering script with correct API
         vizjs_rendering_script = f"""        // VizJS rendering
         function renderDiagram() {{
             try {{
@@ -187,23 +187,30 @@ class BaseRenderer(ABC):
                 diagramContent.innerHTML = '<div id="svg-output"></div>';
                 diagramContent.style.display = 'block';
 
-                // Render DOT to SVG using VizJS
-                try {{
+                // Render DOT to SVG using correct VizJS API
+                if (typeof Viz !== 'undefined') {{
                     const dotCode = {escaped_dot};
-                    const svg = Viz(dotCode, {{ format: "svg", engine: "dot" }});
-                    document.getElementById('svg-output').innerHTML = svg;
+                    const viz = new Viz();
+                    viz.renderSVGElement(dotCode).then(function(svgElement) {{
+                        const outputDiv = document.getElementById('svg-output');
+                        outputDiv.innerHTML = '';
+                        outputDiv.appendChild(svgElement);
 
-                    // Initialize pan/zoom after SVG is rendered
-                    setTimeout(() => {{
-                        initializePanZoom();
-                        diagramReady = true;
-                    }}, 200);
+                        // Initialize pan/zoom after SVG is rendered
+                        setTimeout(() => {{
+                            initializePanZoom();
+                            diagramReady = true;
+                        }}, 200);
 
-                }} catch (vizError) {{
-                    console.error('VizJS error:', vizError);
+                    }}).catch(function(vizError) {{
+                        console.error('VizJS error:', vizError);
+                        document.getElementById('svg-output').innerHTML =
+                            '<div class="error-message"><strong>Error rendering diagram:</strong><br>' +
+                            vizError.message + '<br><br><strong>Original code:</strong><br><pre>{escaped_original}</pre></div>';
+                    }});
+                }} else {{
                     document.getElementById('svg-output').innerHTML =
-                        '<div class="error-message"><strong>Error rendering diagram:</strong><br>' +
-                        vizError.message + '<br><br><strong>Original code:</strong><br><pre>{escaped_original}</pre></div>';
+                        '<div class="error-message"><strong>Error:</strong><br>VizJS not available</div>';
                 }}
 
             }} catch (error) {{

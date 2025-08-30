@@ -69,14 +69,12 @@ class GraphvizRenderer(BaseRenderer):
         return code.strip()
 
     def render_html(self, code, **kwargs):
-        """Generate Graphviz diagram as HTML using unified template"""
+        """Generate Graphviz diagram as HTML using VizJS"""
         if not self.use_local_rendering:
             raise Exception("Local rendering disabled")
 
         try:
-            # Clean DOT code
             clean_dot = self.clean_code(code)
-            return self._render_unified_html(clean_dot, code, "graphviz")
-
+            return self._render_vizjs_html(clean_dot, original_code=code)
         except Exception as e:
             raise Exception(f"Error rendering Graphviz diagram: {str(e)}")
