@@ -334,10 +334,6 @@
                         PNG
                         <div class="tooltip">Download PNG</div>
                     </button>
-                    <button class="control-btn" onclick="downloadCode(); this.blur();" title="Download Source">
-                        &lt;/&gt;
-                        <div class="tooltip">Download Source</div>
-                    </button>
                     <button class="control-btn" onclick="copyDiagram(); this.blur();" title="Copy Source">
                         ⎘
                         <div class="tooltip">Copy Source</div>
@@ -554,16 +550,6 @@
             img.src = dataUrl;
         }
 
-        function downloadCode() {
-            const originalCode = {escaped_original};
-            const fileName = generateFileName(originalCode, '.txt');
-            const blob = new Blob([originalCode], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.download = fileName;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            URL.revokeObjectURL(link.href);
-        }
 
         function copyDiagram() {
             try {
