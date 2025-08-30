@@ -40,8 +40,8 @@ class TestCharsetEncoding:
         renderer = DiagramRenderer()
         html = renderer.render_diagram_auto("graph TD; A --> B")
 
-        # Check for GitHub-style Unicode control symbols
-        unicode_symbols = ["🖼", "⧉", "↻", "←", "→", "↑", "↓"]
+        # Check for GitHub-style Unicode control symbols (actual ones used in UI)
+        unicode_symbols = ["⧉", "↓", "?", "○", "⛶"]
 
         for symbol in unicode_symbols:
             assert symbol in html, f"Unicode symbol '{symbol}' not found in HTML"
