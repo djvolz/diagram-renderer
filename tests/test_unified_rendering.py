@@ -258,10 +258,11 @@ class TestDemoScriptFunctionality:
     def test_demo_script_exists_and_executable(self):
         """Test that the demo script exists in the correct location"""
         import os
+        from pathlib import Path
 
-        demo_path = "/Users/danny/Developer/diagram-render/examples/unified_demo.py"
+        demo_path = Path(__file__).parent.parent / "examples" / "unified_demo.py"
 
-        assert os.path.exists(demo_path)
+        assert demo_path.exists()
         assert os.access(demo_path, os.R_OK)
 
     def test_demo_script_imports(self):
@@ -269,15 +270,15 @@ class TestDemoScriptFunctionality:
         try:
             import os
             import sys
+            from pathlib import Path
 
             sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
             # Import the demo module
             import importlib.util
 
-            spec = importlib.util.spec_from_file_location(
-                "unified_demo", "/Users/danny/Developer/diagram-render/examples/unified_demo.py"
-            )
+            demo_path = Path(__file__).parent.parent / "examples" / "unified_demo.py"
+            spec = importlib.util.spec_from_file_location("unified_demo", str(demo_path))
             demo_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(demo_module)
 
