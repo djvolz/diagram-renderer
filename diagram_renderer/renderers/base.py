@@ -149,36 +149,62 @@ class BaseRenderer(ABC):
         html = html.replace("{escaped_original}", escaped_original)
         return html
 
-    def _render_unified_html(self, svg_content, original_code, diagram_type="diagram"):
-        """Generate HTML using unified template with consistent controls"""
+    def _render_unified_html(self, dot_code, original_code, diagram_type="diagram"):
+        """Generate HTML using unified template with VizJS rendering"""
         panzoom_js_content = self.get_static_js_content("panzoom.min.js")
+
+        # Get VizJS content
+        viz_js_content = (
+            self.get_static_js_content("viz-lite.js")
+            + "\n"
+            + self.get_static_js_content("viz-full.js")
+        )
 
         if not panzoom_js_content:
             return "<div>Error: Panzoom.js not available</div>"
+
+        if not viz_js_content:
+            return "<div>Error: VizJS not available</div>"
 
         # Escape original code for JavaScript
         import json
 
         escaped_original = json.dumps(original_code)
+        escaped_dot = json.dumps(dot_code)
 
         # Get unified template
         template = self.get_template_content("unified.html")
         if not template:
             return "<div>Error: Unified template not available</div>"
 
-        # Generic rendering script for pre-rendered SVG
-        rendering_script = f"""        // VizJS rendering
+        # VizJS rendering script
+        vizjs_rendering_script = f"""        // VizJS rendering
         function renderDiagram() {{
             try {{
                 loading.style.display = 'none';
-                diagramContent.innerHTML = `{svg_content}`;
+
+                // Create div for SVG output
+                diagramContent.innerHTML = '<div id="svg-output"></div>';
                 diagramContent.style.display = 'block';
 
-                // Initialize pan/zoom after rendering
-                setTimeout(() => {{
-                    initializePanZoom();
-                    diagramReady = true;
-                }}, 100);
+                // Render DOT to SVG using VizJS
+                try {{
+                    const dotCode = {escaped_dot};
+                    const svg = Viz(dotCode, {{ format: "svg", engine: "dot" }});
+                    document.getElementById('svg-output').innerHTML = svg;
+
+                    // Initialize pan/zoom after SVG is rendered
+                    setTimeout(() => {{
+                        initializePanZoom();
+                        diagramReady = true;
+                    }}, 200);
+
+                }} catch (vizError) {{
+                    console.error('VizJS error:', vizError);
+                    document.getElementById('svg-output').innerHTML =
+                        '<div class="error-message"><strong>Error rendering diagram:</strong><br>' +
+                        vizError.message + '<br><br><strong>Original code:</strong><br><pre>{escaped_original}</pre></div>';
+                }}
 
             }} catch (error) {{
                 console.error('Diagram rendering error:', error);
@@ -197,7 +223,7 @@ class BaseRenderer(ABC):
         }}"""
 
         # Replace template variables
-        html = template.replace("{js_content}", "")  # No additional JS needed for pre-rendered SVG
+        html = template.replace("{js_content}", viz_js_content)
         html = html.replace("{panzoom_js_content}", panzoom_js_content)
         html = html.replace("{diagram_content}", "")  # Content will be set by JS
         html = html.replace("{escaped_original}", escaped_original)
@@ -216,6 +242,6 @@ class BaseRenderer(ABC):
             }, 100);
         }"""
 
-        html = html.replace(default_render_function, rendering_script)
+        html = html.replace(default_render_function, vizjs_rendering_script)
 
         return html

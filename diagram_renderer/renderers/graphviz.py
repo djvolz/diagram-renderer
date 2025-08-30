@@ -76,40 +76,7 @@ class GraphvizRenderer(BaseRenderer):
         try:
             # Clean DOT code
             clean_dot = self.clean_code(code)
-
-            # Get VizJS content
-            viz_js_content = (
-                self.get_static_js_content("viz-lite.js")
-                + "\n"
-                + self.get_static_js_content("viz-full.js")
-            )
-
-            if not viz_js_content:
-                return "<div>Error: VizJS not available</div>"
-
-            # Render DOT to SVG using VizJS
-            import json
-
-            escaped_dot = json.dumps(clean_dot)
-
-            # Create a simple script to render SVG
-            render_script = f"""
-            <script>
-            {viz_js_content}
-            try {{
-                const dotCode = {escaped_dot};
-                const svg = Viz(dotCode, {{ format: "svg", engine: "dot" }});
-                document.getElementById('svg-output').innerHTML = svg;
-            }} catch (error) {{
-                document.getElementById('svg-output').innerHTML =
-                    '<div class="error-message">Error: ' + error.message + '</div>';
-            }}
-            </script>
-            """
-
-            svg_content = '<div id="svg-output"></div>' + render_script
-
-            return self._render_unified_html(svg_content, code, "graphviz")
+            return self._render_unified_html(clean_dot, code, "graphviz")
 
         except Exception as e:
             raise Exception(f"Error rendering Graphviz diagram: {str(e)}")
