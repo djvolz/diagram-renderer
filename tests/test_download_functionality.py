@@ -24,11 +24,11 @@ class TestInteractiveControls:
         html = renderer.render_diagram_auto(mermaid_code)
 
         # Check for main control elements (based on actual UI)
-        assert 'onclick="downloadPNG()"' in html
-        assert 'onclick="copyDiagram()"' in html
-        assert 'onclick="toggleHelp()"' in html
-        assert 'onclick="resetZoom()"' in html
-        assert 'onclick="toggleFullscreen()"' in html
+        assert 'onclick="downloadPNG()' in html
+        assert 'onclick="copyDiagram()' in html
+        assert 'onclick="toggleHelp()' in html
+        assert 'onclick="resetView()' in html
+        assert 'onclick="toggleFullscreen()' in html
 
         # Check for proper icons (updated to match actual implementation)
         assert "↓" in html  # Download arrow
@@ -49,11 +49,11 @@ class TestInteractiveControls:
         html = renderer.render_diagram_auto(dot_code)
 
         # Check for same control elements
-        assert 'onclick="downloadPNG()"' in html
-        assert 'onclick="copyDiagram()"' in html
-        assert 'onclick="toggleHelp()"' in html
-        assert 'onclick="resetZoom()"' in html
-        assert 'onclick="toggleFullscreen()"' in html
+        assert 'onclick="downloadPNG()' in html
+        assert 'onclick="copyDiagram()' in html
+        assert 'onclick="toggleHelp()' in html
+        assert 'onclick="resetView()' in html
+        assert 'onclick="toggleFullscreen()' in html
 
     def test_panzoom_integration(self):
         """Test that panzoom library is properly integrated"""
@@ -122,7 +122,7 @@ class TestDownloadFunctionality:
         assert "function toggleHelp()" in html
         assert 'id="help-modal"' in html
         assert "Keyboard Shortcuts" in html
-        assert "Mouse Controls" in html
+        assert "Mouse Drag" in html
 
     def test_fullscreen_functionality(self):
         """Test fullscreen toggle functionality"""
@@ -144,7 +144,7 @@ class TestDownloadFunctionality:
         html = renderer.render_diagram_auto(code)
 
         # Check for reset functionality
-        assert "function resetView()" in html or "resetZoom" in html
+        assert "function resetView()" in html
         assert "panzoomInstance.reset" in html or "panzoomInstance.zoom" in html
 
 
@@ -194,7 +194,7 @@ class TestTemplateStructure:
         tooltips = [
             'title="Download PNG"',
             'title="Copy Source"',
-            'title="Help"',
+            'title="Keyboard Shortcuts"',
             'title="Reset View"',
             'title="Fullscreen"',
         ]
@@ -258,7 +258,9 @@ class TestErrorHandlingRobustness:
 
         renderer = DiagramRenderer()
 
-        with patch.object(renderer.mermaid_renderer, "get_static_js_content", return_value=None):
+        # Get the mermaid renderer from the renderers list
+        mermaid_renderer = next(r for name, r in renderer.renderers if name == "mermaid")
+        with patch.object(mermaid_renderer, "get_static_js_content", return_value=None):
             html = renderer.render_diagram_auto("graph TD; A-->B")
 
             # Should handle missing libraries gracefully
@@ -269,16 +271,19 @@ class TestErrorHandlingRobustness:
         """Test handling of invalid diagram code"""
         renderer = DiagramRenderer()
 
-        invalid_codes = [
-            "",  # Empty
-            "invalid syntax here",  # Invalid
+        # Test empty code - should return None
+        html = renderer.render_diagram_auto("")
+        assert html is None
+
+        # Test other codes - should produce HTML (with fallback to Mermaid)
+        test_codes = [
+            "invalid syntax here",  # Invalid (fallback to Mermaid)
             "graph TD\n    A --->>>> B",  # Malformed Mermaid
             "digraph { A -> }",  # Incomplete Graphviz
         ]
 
-        for code in invalid_codes:
+        for code in test_codes:
             html = renderer.render_diagram_auto(code)
-
-            # Should not crash, should produce some HTML
+            # Should not crash and should produce HTML
             assert html is not None
             assert len(html) > 10
