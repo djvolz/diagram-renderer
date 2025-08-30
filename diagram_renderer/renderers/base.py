@@ -166,7 +166,7 @@ class BaseRenderer(ABC):
         if not viz_js_content:
             return "<div>Error: VizJS not available</div>"
 
-        # Escape original code for JavaScript
+        # Escape codes for JavaScript
         import json
 
         escaped_original = json.dumps(original_code)
@@ -177,55 +177,36 @@ class BaseRenderer(ABC):
         if not template:
             return "<div>Error: Unified template not available</div>"
 
-        # VizJS rendering script with correct API
-        vizjs_rendering_script = f"""        // VizJS rendering
+        # VizJS rendering script matching the working vizjs.html approach
+        vizjs_rendering_script = f"""        // VizJS rendering (matches working vizjs.html)
         function renderDiagram() {{
             try {{
                 loading.style.display = 'none';
-
-                // Create div for SVG output
-                diagramContent.innerHTML = '<div id="svg-output"></div>';
                 diagramContent.style.display = 'block';
 
-                // Render DOT to SVG using correct VizJS API
                 if (typeof Viz !== 'undefined') {{
-                    const dotCode = {escaped_dot};
                     const viz = new Viz();
-                    viz.renderSVGElement(dotCode).then(function(svgElement) {{
-                        const outputDiv = document.getElementById('svg-output');
-                        outputDiv.innerHTML = '';
-                        outputDiv.appendChild(svgElement);
+                    const dotString = {escaped_dot};
+                    viz.renderSVGElement(dotString).then(function(svgElement) {{
+                        diagramContent.innerHTML = '';
+                        diagramContent.appendChild(svgElement);
 
                         // Initialize pan/zoom after SVG is rendered
                         setTimeout(() => {{
                             initializePanZoom();
                             diagramReady = true;
-                        }}, 200);
+                        }}, 100);
 
-                    }}).catch(function(vizError) {{
-                        console.error('VizJS error:', vizError);
-                        document.getElementById('svg-output').innerHTML =
-                            '<div class="error-message"><strong>Error rendering diagram:</strong><br>' +
-                            vizError.message + '<br><br><strong>Original code:</strong><br><pre>{escaped_original}</pre></div>';
+                    }}).catch(function(error) {{
+                        console.error('VizJS render error:', error);
+                        diagramContent.innerHTML = '<div class="error-message">VizJS Render Error: ' + error.message + '</div>';
                     }});
                 }} else {{
-                    document.getElementById('svg-output').innerHTML =
-                        '<div class="error-message"><strong>Error:</strong><br>VizJS not available</div>';
+                    diagramContent.innerHTML = '<div class="error-message">VizJS not available.</div>';
                 }}
-
             }} catch (error) {{
-                console.error('Diagram rendering error:', error);
-                loading.style.display = 'none';
-                diagramContent.innerHTML = `
-                    <div class="error-message">
-                        <strong>Error rendering diagram:</strong><br>
-                        ${{error.message}}
-                        <br><br>
-                        <strong>Original code:</strong><br>
-                        <pre>{escaped_original}</pre>
-                    </div>
-                `;
-                diagramContent.style.display = 'block';
+                console.error('Script error:', error);
+                diagramContent.innerHTML = '<div class="error-message">Script Error: ' + error.message + '</div>';
             }}
         }}"""
 
