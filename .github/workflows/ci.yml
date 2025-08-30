@@ -75,7 +75,7 @@ jobs:
 
     - name: Test CLI functionality
       run: |
-        echo "graph TD; A-->B" | uv run python examples/cli.py --output test-output.html
+        uv run python examples/cli.py quick "graph TD; A-->B" -o test-output.html
         test -f test-output.html
 
     - name: Test examples
