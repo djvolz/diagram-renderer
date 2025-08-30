@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color, #ffffff);
+            color: var(--text-color, #24292e);
+            height: 100vh;
+            width: 100%;
+            min-height: 500px;
+            overflow: hidden;
+            position: relative;
+
+            /* CSS variables for theming */
+            --bg-color: #ffffff;
+            --text-color: #24292e;
+            --border-color: #d0d7de;
+            --button-bg: #ffffff;
+            --button-hover-bg: #f6f8fa;
+            --button-active-bg: #e1e7ef;
+            --button-border: #d0d7de;
+            --button-hover-border: #8c959f;
+            --shadow-color: rgba(0,0,0,0.12);
+            --control-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .bottom-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            background: var(--control-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            backdrop-filter: blur(8px);
+        }
+
+        .top-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-btn {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--button-border);
+            border-radius: 6px;
+            min-width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            outline: none;
+        }
+
+        .control-btn:focus {
+            outline: none;
+            border-color: var(--button-hover-border);
+        }
+
+        .control-btn:hover {
+            background: var(--button-hover-bg);
+            border-color: var(--button-hover-border);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px var(--shadow-color);
+        }
+
+        .control-btn:active {
+            background: var(--button-active-bg);
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .control-btn:disabled {
+            background: var(--button-bg);
+            color: #8c959f;
+            cursor: not-allowed;
+            opacity: 0.5;
+            transform: none !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+
+        .diagram-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .diagram-content {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: visible;
+        }
+
+        .diagram-content svg {
+            max-width: none;
+            max-height: none;
+            width: auto;
+            height: auto;
+        }
+
+        .error-message {
+            color: #d1242f;
+            background-color: #ffebee;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 16px;
+            color: var(--text-color);
+        }
+
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            z-index: 1001;
+            top: 120%;
+            right: 0;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        /* Special positioning for tooltips that might go off-screen */
+        .controls-overlay .tooltip {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Bottom controls tooltips should appear above */
+        .bottom-controls .tooltip {
+            top: auto;
+            bottom: 120%;
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .control-btn:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Success feedback */
+        .success-feedback {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            margin-top: 4px;
+            white-space: nowrap;
+        }
+
+        .success-feedback.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .help-modal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .help-content {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+
+        .help-content h3 {
+            margin: 0 0 16px 0;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .help-content .shortcuts {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 16px;
+            margin-bottom: 16px;
+        }
+
+        .help-content .shortcut-key {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: var(--button-hover-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .help-content .shortcut-desc {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .help-close {
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--button-border);
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            float: right;
+        }
+
+        .help-close:hover {
+            background: var(--button-hover-bg);
+            border-color: var(--button-hover-border);
+        }
+    </style>
+    <script>
+{js_content}
+    </script>
+    <script>
+{panzoom_js_content}
+    </script>
+</head>
+<body>
+    <div class="diagram-container" id="diagram-container">
+        <div class="controls-overlay">
+            <!-- Top action controls -->
+            <div class="control-group">
+                <div class="top-controls">
+                    <button class="control-btn" onclick="downloadPNG(); this.blur();" title="Download PNG">
+                        ↓
+                        <div class="tooltip">Download PNG</div>
+                    </button>
+                    <button class="control-btn" onclick="copyDiagram(); this.blur();" title="Copy Source">
+                        ⧉
+                        <div class="tooltip">Copy Source</div>
+                        <div class="success-feedback" id="copy-feedback">Copied!</div>
+                    </button>
+                    <button class="control-btn" onclick="toggleHelp(); this.blur();" title="Keyboard Shortcuts">
+                        ?
+                        <div class="tooltip">Help</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-wrapper" id="diagram-wrapper">
+            <div class="loading" id="loading">Rendering diagram...</div>
+            <div class="diagram-content" id="diagram-content">
+{diagram_content}
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="help-modal" id="help-modal">
+            <div class="help-content">
+                <h3>Keyboard Shortcuts</h3>
+                <div class="shortcuts">
+                    <span class="shortcut-key">Mouse Wheel</span>
+                    <span class="shortcut-desc">Zoom in/out</span>
+
+                    <span class="shortcut-key">Mouse Drag</span>
+                    <span class="shortcut-desc">Pan around</span>
+
+                    <span class="shortcut-key">Double Click</span>
+                    <span class="shortcut-desc">Zoom in</span>
+
+                    <span class="shortcut-key">+</span>
+                    <span class="shortcut-desc">Zoom in</span>
+
+                    <span class="shortcut-key">-</span>
+                    <span class="shortcut-desc">Zoom out</span>
+
+                    <span class="shortcut-key">0</span>
+                    <span class="shortcut-desc">Reset view</span>
+
+                    <span class="shortcut-key">F</span>
+                    <span class="shortcut-desc">Toggle fullscreen</span>
+
+
+                    <span class="shortcut-key">?</span>
+                    <span class="shortcut-desc">Show/hide this help</span>
+
+                    <span class="shortcut-key">Esc</span>
+                    <span class="shortcut-desc">Close help or exit fullscreen</span>
+                </div>
+                <button class="help-close" onclick="toggleHelp()">Close</button>
+            </div>
+        </div>
+
+        <!-- Bottom right view controls -->
+        <div class="bottom-controls">
+            <div class="control-group">
+                <div class="zoom-controls">
+                    <button class="control-btn" onclick="resetView(); this.blur();" title="Reset View">
+                        ○
+                        <div class="tooltip">Reset View</div>
+                    </button>
+                    <button class="control-btn" onclick="toggleFullscreen(); this.blur();" title="Fullscreen">
+                        ⛶
+                        <div class="tooltip">Fullscreen</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let panzoomInstance = null;
+        let diagramReady = false;
+        const diagramWrapper = document.getElementById('diagram-wrapper');
+        const diagramContent = document.getElementById('diagram-content');
+        const loading = document.getElementById('loading');
+
+        // Pan/Zoom functions using panzoom library
+        function initializePanZoom() {
+            if (panzoomInstance) {
+                panzoomInstance.dispose();
+            }
+
+            const svgElement = diagramContent.querySelector('svg');
+            if (svgElement) {
+                panzoomInstance = window.panzoom(svgElement, {
+                    maxZoom: 4,
+                    minZoom: 0.1,
+                    bounds: true,
+                    boundsPadding: 0.1,
+                    zoomSpeed: 0.1,
+                    panOnlyWhenZoomed: false,
+                    contain: 'outside'
+                });
+
+                // Enable mouse wheel zooming
+                svgElement.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    panzoomInstance.zoomWithWheel(e);
+                });
+            }
+        }
+
+        function resetView() {
+            if (panzoomInstance) {
+                panzoomInstance.moveTo(0, 0);
+                panzoomInstance.zoomAbs(0, 0, 1);
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function toggleHelp() {
+            const helpModal = document.getElementById('help-modal');
+            helpModal.classList.toggle('show');
+        }
+
+        // Download functions
+        function generateFileName(originalCode, extension, diagramType = 'diagram') {
+            const cleanCode = originalCode.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const skipWords = new Set([
+                'graph', 'td', 'lr', 'bt', 'rl', 'tb', 'sequencediagram', 'participant', 'as',
+                'actor', 'note', 'over', 'end', 'alt', 'else', 'loop', 'opt', 'par', 'and',
+                'mermaid', 'diagram', 'start', 'stop', 'digraph', 'strict', 'subgraph',
+                'node', 'edge', 'rankdir', 'bgcolor', 'fontname', 'fontsize', 'label',
+                'shape', 'color', 'style', 'startuml', 'enduml', 'skinparam', 'theme', 'include'
+            ]);
+
+            const words = cleanCode.split(' ')
+                .filter(word => word.length > 2 && !skipWords.has(word))
+                .slice(0, 3);
+
+            let baseName = diagramType + '-diagram';
+            if (words.length > 0) {
+                baseName = diagramType + '-' + words.join('-');
+                if (baseName.length > 30) {
+                    baseName = baseName.substring(0, 30);
+                }
+            }
+
+            return baseName + extension;
+        }
+
+        function downloadPNG() {
+            if (!diagramReady) {
+                alert('Diagram is still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            const svgElement = diagramContent.querySelector('svg');
+            if (!svgElement) {
+                alert('No diagram to download');
+                return;
+            }
+
+            const svgClone = svgElement.cloneNode(true);
+            const bbox = svgElement.getBBox();
+            const width = bbox.width || 800;
+            const height = bbox.height || 600;
+
+            svgClone.setAttribute('width', width);
+            svgClone.setAttribute('height', height);
+            svgClone.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${width} ${height}`);
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            ctx.scale(2, 2);
+
+            let svgData = new XMLSerializer().serializeToString(svgClone);
+
+            if (!svgData.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgData = svgData.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
+            const img = new Image();
+            img.onload = function() {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    const pngDataUrl = canvas.toDataURL('image/png');
+                    const originalCode = {escaped_original};
+                    const fileName = generateFileName(originalCode, '.png');
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = pngDataUrl;
+                    link.click();
+                } catch (error) {
+                    alert('Failed to create PNG. Security restrictions may prevent export.');
+                }
+            };
+            img.onerror = function() {
+                alert('Failed to generate PNG. The SVG may contain unsupported elements.');
+            };
+            img.src = dataUrl;
+        }
+
+
+        function copyDiagram() {
+            try {
+                const originalCode = {escaped_original};
+                navigator.clipboard.writeText(originalCode).then(() => {
+                    const feedback = document.getElementById('copy-feedback');
+                    feedback.classList.add('show');
+                    setTimeout(() => {
+                        feedback.classList.remove('show');
+                    }, 2000);
+                }).catch(() => {
+                    alert('Failed to copy source code to clipboard');
+                });
+            } catch (error) {
+                alert('Failed to copy source code');
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Don't trigger shortcuts if user is typing in an input field
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(e.key) {
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    if (panzoomInstance) {
+                        const transform = panzoomInstance.getTransform();
+                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 1.2);
+                    }
+                    break;
+                case '-':
+                    e.preventDefault();
+                    if (panzoomInstance) {
+                        const transform = panzoomInstance.getTransform();
+                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale / 1.2);
+                    }
+                    break;
+                case '0':
+                    e.preventDefault();
+                    resetView();
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case '?':
+                    e.preventDefault();
+                    toggleHelp();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    if (document.getElementById('help-modal').classList.contains('show')) {
+                        toggleHelp();
+                    } else if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    }
+                    break;
+            }
+        });
+
+        // Diagram rendering function - to be overridden by specific renderers
+        function renderDiagram() {
+            // Default implementation - just show the content
+            loading.style.display = 'none';
+            diagramContent.style.display = 'block';
+
+            // Initialize pan/zoom after content is ready
+            setTimeout(() => {
+                initializePanZoom();
+                diagramReady = true;
+            }, 100);
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            renderDiagram();
+
+            // Close help modal when clicking outside
+            document.getElementById('help-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    toggleHelp();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

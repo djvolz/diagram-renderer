@@ -146,12 +146,14 @@ class PlantUMLRenderer(BaseRenderer):
         return dot
 
     def render_html(self, code, **kwargs):
-        """Generate PlantUML-like diagram as HTML using local VizJS"""
+        """Generate PlantUML diagram as HTML using unified template"""
         if not self.use_local_rendering:
             raise Exception("Local rendering disabled")
 
         try:
+            # Convert PlantUML to DOT
             dot_code = self.convert_plantuml_to_dot(code)
-            return self._render_vizjs_html(dot_code, original_code=code)
+            return self._render_unified_html(dot_code, code, "plantuml")
+
         except Exception as e:
             raise Exception(f"Error rendering PlantUML diagram: {str(e)}")

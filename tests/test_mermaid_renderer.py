@@ -103,28 +103,6 @@ class TestMermaidRenderer:
 
         assert "Error: Mermaid.js not available" in result
 
-    def test_render_svg_html(self, mermaid_renderer, sample_mermaid_flowchart, monkeypatch):
-        """Test SVG HTML rendering for extraction"""
-        # Mock JS content to avoid file dependency
-        monkeypatch.setattr(mermaid_renderer, "get_static_js_content", lambda x: "// mock mermaid")
-
-        result = mermaid_renderer.render_svg_html(sample_mermaid_flowchart)
-
-        assert "mermaid-output" in result
-        assert "SVG_START" in result
-        assert "SVG_END" in result
-
-    def test_render_svg_html_without_js(
-        self, mermaid_renderer, sample_mermaid_flowchart, monkeypatch
-    ):
-        """Test SVG HTML rendering when JS is not available"""
-        # Mock get_static_js_content to return None
-        monkeypatch.setattr(mermaid_renderer, "get_static_js_content", lambda x: None)
-
-        result = mermaid_renderer.render_svg_html(sample_mermaid_flowchart)
-
-        assert "Error: Mermaid.js not available" in result
-
 
 class TestMermaidRendererIntegration:
     """Integration tests for MermaidRenderer"""

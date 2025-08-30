@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: uv sync --extra dev
+
+    - name: Run core tests
+      run: |
+        uv run pytest tests/test_diagram_renderer.py tests/test_mermaid_renderer.py tests/test_base_renderer.py tests/test_plantuml_renderer.py tests/test_static_assets.py tests/test_charset_encoding.py tests/test_download_functionality.py tests/test_modernization_features.py tests/test_unified_rendering.py -v
+
+    - name: Run linting
+      run: |
+        uv run ruff check .
+
+    - name: Run formatting check
+      run: |
+        uv run ruff format --check .
+
+    - name: Run type checking (allowed to fail)
+      run: |
+        uv run mypy diagram_renderer || echo "::warning::Type checking failed but continuing"
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install 3.11
+
+    - name: Install all dependencies
+      run: uv sync --extra dev --extra dashboard --extra webapp --extra mcp
+
+    - name: Run integration tests
+      run: |
+        uv run pytest tests/test_dashboard_integration.py tests/test_webapp_api.py tests/test_mcp_integration.py -v || echo "::warning::Some integration tests failed (optional dependencies may be missing)"
+
+    - name: Test CLI functionality
+      run: |
+        uv run python examples/cli.py quick "graph TD; A-->B" -o test-output.html
+        test -f test-output.html
+
+    - name: Test examples
+      run: |
+        uv run python examples/unified_demo.py

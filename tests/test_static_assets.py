@@ -57,13 +57,32 @@ class TestStaticJSLibraries:
         assert viz_lite.stat().st_size > 5_000, "viz-lite.js too small"
         assert viz_lite.stat().st_size < 50_000, "viz-lite.js too large for lite version"
 
+    def test_panzoom_file_exists(self):
+        """Test that panzoom.min.js file exists and has reasonable size"""
+        panzoom_file = (
+            Path(__file__).parent.parent
+            / "diagram_renderer"
+            / "renderers"
+            / "static"
+            / "js"
+            / "panzoom.min.js"
+        )
+
+        assert panzoom_file.exists(), "panzoom.min.js not found"
+        assert panzoom_file.is_file(), "panzoom.min.js is not a file"
+
+        # Check file size (should be substantial but not huge)
+        file_size = panzoom_file.stat().st_size
+        assert file_size > 10_000, f"panzoom.min.js too small: {file_size} bytes"
+        assert file_size < 200_000, f"panzoom.min.js too large: {file_size} bytes"
+
     def test_js_files_are_valid_javascript(self):
         """Test that JS files contain valid JavaScript syntax indicators"""
         static_dir = (
             Path(__file__).parent.parent / "diagram_renderer" / "renderers" / "static" / "js"
         )
 
-        js_files = ["mermaid.min.js", "viz-full.js", "viz-lite.js"]
+        js_files = ["mermaid.min.js", "viz-full.js", "viz-lite.js", "panzoom.min.js"]
 
         for js_file in js_files:
             file_path = static_dir / js_file
@@ -131,7 +150,7 @@ class TestStaticJSLibraries:
         )
 
         # Check that all required files exist (consistency check)
-        required_files = ["mermaid.min.js", "viz-full.js", "viz-lite.js"]
+        required_files = ["mermaid.min.js", "viz-full.js", "viz-lite.js", "panzoom.min.js"]
 
         for file_name in required_files:
             file_path = static_dir / file_name
@@ -160,8 +179,14 @@ class TestJSLibraryFunctionality:
         renderer = DiagramRenderer()
         html = renderer.render_diagram_auto("graph TD; A --> B")
 
-        # Should have interactive control functions
-        control_functions = ["zoomIn", "zoomOut", "resetZoom", "downloadPNG", "updateTransform"]
+        # Should have panzoom and interactive control functions
+        control_functions = [
+            "downloadPNG",
+            "copyDiagram",
+            "toggleHelp",
+            "resetView",
+            "toggleFullscreen",
+        ]
 
         for func in control_functions:
             assert func in html, f"Interactive control function {func} not found"
@@ -194,7 +219,8 @@ class TestJSLibraryFunctionality:
         # Should preserve Unicode in both content and controls
         assert "测试 🚀" in html, "Unicode content not preserved"
         assert "Тест 📊" in html, "Cyrillic content not preserved"
-        assert "🖼" in html, "Unicode control symbols not preserved"
+        # Updated to match current UI icons
+        assert "↓" in html or "⧉" in html, "Unicode control symbols not preserved"
 
     def test_js_library_no_conflicts(self):
         """Test that JS libraries don't conflict with each other"""
@@ -214,5 +240,5 @@ class TestJSLibraryFunctionality:
 
         # Both should have interactive controls
         for html in [mermaid_html, graphviz_html]:
-            assert "zoomIn" in html, "Interactive controls missing"
+            assert "initializePanZoom" in html, "Interactive controls missing"
             assert "downloadPNG" in html, "Download functionality missing"
