@@ -146,41 +146,61 @@ jobs:
       run: |
         uv build
 
-    - name: Commit version bump
+    - name: Create release branch and PR
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
 
+        # Create release branch
+        RELEASE_BRANCH="release/v${{ steps.version.outputs.NEW_VERSION }}"
+        git checkout -b "$RELEASE_BRANCH"
+
         # Add and commit the version file
         git add diagram_renderer/__version__.py
         git commit -m "chore: release v${{ steps.version.outputs.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
 
-        # Pull and rebase to get latest changes
-        git pull --rebase origin main || {
-          echo "Rebase failed, trying to resolve..."
-          git rebase --abort || true
-          git pull origin main --strategy=ours
-        }
+        # Push the release branch
+        git push origin "$RELEASE_BRANCH"
 
-        # Push the version bump
-        git push origin main
+        # Create PR for the release
+        gh pr create \
+          --title "chore: release v${{ steps.version.outputs.NEW_VERSION }}" \
+          --body "Automated release of version ${{ steps.version.outputs.NEW_VERSION }}" \
+          --base main \
+          --head "$RELEASE_BRANCH"
 
-    - name: Create Release
+        echo "RELEASE_BRANCH=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+
+    - name: Auto-merge release PR and create release
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.version.outputs.NEW_VERSION }}
-        name: v${{ steps.version.outputs.NEW_VERSION }}
-        body_path: RELEASE_NOTES.md
-        draft: false
-        prerelease: false
-        files: |
-          dist/*
-
-    - name: Upload to PyPI
-      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
-      env:
-        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        uv publish || echo "::warning::PyPI upload failed"
+        # Wait a moment for PR to be created
+        sleep 5
+
+        # Get the PR number
+        PR_NUMBER=$(gh pr list --head "release/v${{ steps.version.outputs.NEW_VERSION }}" --json number --jq '.[0].number')
+
+        if [ -n "$PR_NUMBER" ]; then
+          echo "Auto-merging PR #$PR_NUMBER"
+          gh pr merge "$PR_NUMBER" --squash --auto
+
+          # Wait for merge to complete
+          sleep 10
+
+          # Switch back to main and pull
+          git checkout main
+          git pull origin main
+
+          # Create the GitHub release
+          gh release create "v${{ steps.version.outputs.NEW_VERSION }}" \
+            --title "v${{ steps.version.outputs.NEW_VERSION }}" \
+            --notes-file RELEASE_NOTES.md \
+            dist/*
+
+          # Upload to PyPI
+          uv publish || echo "::warning::PyPI upload failed"
+        else
+          echo "::error::Could not find release PR to merge"
+          exit 1
+        fi
