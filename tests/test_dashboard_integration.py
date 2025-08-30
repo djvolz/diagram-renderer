@@ -293,28 +293,3 @@ class TestDashboardErrorHandling:
 
         except ImportError:
             pytest.skip("Streamlit components not available")
-
-    # def test_missing_static_files_handling(self):
-    #     """Test dashboard behavior when static JS files are missing"""
-    #     try:
-    #         from diagram_renderer import DiagramRenderer
-
-    #         renderer = DiagramRenderer()
-
-    #         # Mock missing static files
-    #         import unittest.mock
-    #         mermaid_renderer_instance = renderer.renderer.renderers[2][1] # Mermaid is always last
-    #         plantuml_renderer_instance = renderer.renderer.renderers[1][1] # PlantUML is second
-
-    #         with unittest.mock.patch.object(mermaid_renderer_instance, 'get_static_js_content', return_value=None):
-    #             with unittest.mock.patch.object(plantuml_renderer_instance, 'get_static_js_content', return_value=None):
-
-    #                 # Should handle gracefully
-    #                 mermaid_result = renderer.render_diagram_auto("graph TD\n  A --> B")
-    #                 assert "Error: Mermaid.js not available" in mermaid_result
-
-    #                 plantuml_result = renderer.render_diagram_auto("@startuml\nA -> B\n@enduml")
-    #                 assert "VizJS not available locally" in plantuml_result
-
-    #     except ImportError:
-    #         pytest.skip("Required modules not available")

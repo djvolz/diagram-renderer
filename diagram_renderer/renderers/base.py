@@ -2,6 +2,9 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+# Template name constants
+TEMPLATE_UNIFIED = "unified.html"
+
 
 class BaseRenderer(ABC):
     """Base class for diagram renderers"""
@@ -114,71 +117,45 @@ class BaseRenderer(ABC):
         print(debug_info)  # This will show in test output
         return None
 
-    def _render_vizjs_html(self, dot_code, original_code=None):
-        """Generate HTML with VizJS to render DOT notation as SVG"""
-        # Use JSON.stringify equivalent escaping to safely embed DOT code
-        escaped_dot = json.dumps(dot_code)
-
-        # If no original code provided, use the dot code
-        if original_code is None:
-            original_code = dot_code
-        escaped_original = json.dumps(original_code)
-
-        # Get VizJS content from local file
-        viz_js_content = (
-            self.get_static_js_content("viz-lite.js")
-            + "\n"
-            + self.get_static_js_content("viz-full.js")
-        )
-        if not viz_js_content:
-            return (
-                f'<div class="error">VizJS not available. DOT code:<br><pre>{dot_code}</pre></div>'
-            )
-
-        # Get template and substitute variables
-        template = self.get_template_content("vizjs.html")
-        if not template:
-            return (
-                f'<div class="error">VizJS template not available. '
-                f"DOT code:<br><pre>{dot_code}</pre></div>"
-            )
-
-        # Use replace instead of format to avoid issues with CSS curly braces
-        html = template.replace("{viz_js_content}", viz_js_content)
-        html = html.replace("{escaped_dot}", escaped_dot)
-        html = html.replace("{escaped_original}", escaped_original)
-        return html
+    def _generate_error_html(self, error_message):
+        """Generate consistent error HTML"""
+        return f"<div>Error: {error_message}</div>"
 
     def _render_unified_html(self, dot_code, original_code, diagram_type="diagram"):
         """Generate HTML using unified template with VizJS rendering"""
-        panzoom_js_content = self.get_static_js_content("panzoom.min.js")
+        # Get required JavaScript libraries
+        panzoom_js = self.get_static_js_content("panzoom.min.js")
+        viz_js = self._get_vizjs_content()
 
-        # Get VizJS content
-        viz_js_content = (
-            self.get_static_js_content("viz-lite.js")
-            + "\n"
-            + self.get_static_js_content("viz-full.js")
+        if not panzoom_js:
+            return self._generate_error_html("Panzoom.js not available")
+        if not viz_js:
+            return self._generate_error_html("VizJS not available")
+
+        # Get and populate template
+        template = self.get_template_content(TEMPLATE_UNIFIED)
+        if not template:
+            return self._generate_error_html("Unified template not available")
+
+        # Generate VizJS rendering script
+        vizjs_script = self._generate_vizjs_rendering_script(dot_code)
+
+        # Replace template placeholders
+        return self._populate_unified_template(
+            template, viz_js, panzoom_js, original_code, vizjs_script
         )
 
-        if not panzoom_js_content:
-            return "<div>Error: Panzoom.js not available</div>"
+    def _get_vizjs_content(self):
+        """Get combined VizJS library content"""
+        viz_lite = self.get_static_js_content("viz-lite.js")
+        viz_full = self.get_static_js_content("viz-full.js")
+        return f"{viz_lite}\n{viz_full}" if viz_lite and viz_full else None
 
-        if not viz_js_content:
-            return "<div>Error: VizJS not available</div>"
-
-        # Escape codes for JavaScript
-        import json
-
-        escaped_original = json.dumps(original_code)
+    def _generate_vizjs_rendering_script(self, dot_code):
+        """Generate JavaScript for VizJS diagram rendering"""
         escaped_dot = json.dumps(dot_code)
 
-        # Get unified template
-        template = self.get_template_content("unified.html")
-        if not template:
-            return "<div>Error: Unified template not available</div>"
-
-        # VizJS rendering script matching the working vizjs.html approach
-        vizjs_rendering_script = f"""        // VizJS rendering (matches working vizjs.html)
+        return f"""        // VizJS rendering (matches working vizjs.html)
         function renderDiagram() {{
             try {{
                 loading.style.display = 'none';
@@ -210,13 +187,11 @@ class BaseRenderer(ABC):
             }}
         }}"""
 
-        # Replace template variables
-        html = template.replace("{js_content}", viz_js_content)
-        html = html.replace("{panzoom_js_content}", panzoom_js_content)
-        html = html.replace("{diagram_content}", "")  # Content will be set by JS
-        html = html.replace("{escaped_original}", escaped_original)
+    def _populate_unified_template(self, template, viz_js, panzoom_js, original_code, vizjs_script):
+        """Replace all placeholders in the unified template"""
+        escaped_original = json.dumps(original_code)
 
-        # Replace the default renderDiagram function
+        # Define the default render function to be replaced
         default_render_function = """        // Diagram rendering function - to be overridden by specific renderers
         function renderDiagram() {
             // Default implementation - just show the content
@@ -230,6 +205,11 @@ class BaseRenderer(ABC):
             }, 100);
         }"""
 
-        html = html.replace(default_render_function, vizjs_rendering_script)
+        # Replace all template variables
+        html = template.replace("{js_content}", viz_js)
+        html = html.replace("{panzoom_js_content}", panzoom_js)
+        html = html.replace("{diagram_content}", "")  # Content will be set by JS
+        html = html.replace("{escaped_original}", escaped_original)
+        html = html.replace(default_render_function, vizjs_script)
 
         return html
