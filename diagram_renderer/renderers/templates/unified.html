@@ -395,6 +395,14 @@
         <div class="bottom-controls">
             <div class="control-group">
                 <div class="zoom-controls">
+                    <button class="control-btn" onclick="zoomIn(); this.blur();" title="Zoom In">
+                        +
+                        <div class="tooltip">Zoom In</div>
+                    </button>
+                    <button class="control-btn" onclick="zoomOut(); this.blur();" title="Zoom Out">
+                        −
+                        <div class="tooltip">Zoom Out</div>
+                    </button>
                     <button class="control-btn" onclick="resetView(); this.blur();" title="Reset View">
                         ○
                         <div class="tooltip">Reset View</div>
@@ -445,6 +453,18 @@
             if (panzoomInstance) {
                 panzoomInstance.moveTo(0, 0);
                 panzoomInstance.zoomAbs(0, 0, 1);
+            }
+        }
+
+        function zoomIn() {
+            if (panzoomInstance) {
+                panzoomInstance.smoothZoom(0, 0, 1.2);
+            }
+        }
+
+        function zoomOut() {
+            if (panzoomInstance) {
+                panzoomInstance.smoothZoom(0, 0, 1/1.2);
             }
         }
 
@@ -579,17 +599,12 @@
                 case '+':
                 case '=':
                     e.preventDefault();
-                    if (panzoomInstance) {
-                        const transform = panzoomInstance.getTransform();
-                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale * 1.2);
-                    }
+                    zoomIn();
                     break;
                 case '-':
+                case '_':
                     e.preventDefault();
-                    if (panzoomInstance) {
-                        const transform = panzoomInstance.getTransform();
-                        panzoomInstance.zoomTo(transform.x, transform.y, transform.scale / 1.2);
-                    }
+                    zoomOut();
                     break;
                 case '0':
                     e.preventDefault();
