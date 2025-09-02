@@ -28,6 +28,9 @@ class MermaidRenderer(BaseRenderer):
             "gitgraph",
             "requirement",
             "mindmap",
+            # External/beta diagram types
+            "xychart-beta",
+            "sankey",
         ]
 
         # Check for strong indicators
@@ -57,6 +60,9 @@ class MermaidRenderer(BaseRenderer):
         # Get required JavaScript libraries
         mermaid_js = self.get_static_js_content(self.js_filename)
         panzoom_js = self.get_static_js_content("panzoom.min.js")
+        # Optional: external diagram plugins (e.g., xychart-beta, sankey)
+        xychart_js = self.get_static_js_content("mermaid-xychart.min.js")
+        sankey_js = self.get_static_js_content("mermaid-sankey.min.js")
 
         if not mermaid_js:
             return self._generate_error_html("Mermaid.js not available")
@@ -76,6 +82,12 @@ class MermaidRenderer(BaseRenderer):
         mermaid_script = self._generate_mermaid_rendering_script(clean_code, escaped_original)
 
         # Replace template placeholders
+        # If we have external plugins locally, inline them after Mermaid
+        if xychart_js:
+            mermaid_js = f"{mermaid_js}\n\n/* mermaid-xychart plugin */\n{xychart_js}"
+        if sankey_js:
+            mermaid_js = f"{mermaid_js}\n\n/* mermaid-sankey plugin */\n{sankey_js}"
+
         return self._populate_mermaid_template(
             template, mermaid_js, panzoom_js, clean_code, escaped_original, mermaid_script
         )
@@ -91,6 +103,25 @@ class MermaidRenderer(BaseRenderer):
             try {{
                 loading.style.display = 'flex';
                 diagramContent.style.display = 'none';
+
+                // Register external/beta diagrams if available (e.g., xychart-beta, sankey)
+                try {{
+                    if (typeof mermaid !== 'undefined') {{
+                        const plugins = [];
+                        // Known globals from plugin UMD builds
+                        if (globalThis.mermaidXychart || globalThis.mermaidXYChart) {{
+                            plugins.push(globalThis.mermaidXychart || globalThis.mermaidXYChart);
+                        }}
+                        if (globalThis.mermaidSankey || globalThis.mermaid_sankey) {{
+                            plugins.push(globalThis.mermaidSankey || globalThis.mermaid_sankey);
+                        }}
+                        if (plugins.length && typeof mermaid.registerExternalDiagrams === 'function') {{
+                            mermaid.registerExternalDiagrams(plugins);
+                        }}
+                    }}
+                }} catch (e) {{
+                    console.warn('Optional Mermaid external diagram registration failed:', e);
+                }}
 
                 mermaid.initialize({{
                     startOnLoad: false,
@@ -110,6 +141,14 @@ class MermaidRenderer(BaseRenderer):
                 }});
 
                 const code = `{clean_code}`;
+                // Helpful guidance when external diagrams are used but plugins aren't bundled
+                const lc = code.trim().toLowerCase();
+                if (lc.startsWith('xychart-beta') && !(globalThis.mermaidXychart || globalThis.mermaidXYChart)) {{
+                    throw new Error('xychart-beta requires mermaid-xychart. Bundle static/js/mermaid-xychart.min.js and ensure registration.');
+                }}
+                if (lc.startsWith('sankey') && !(globalThis.mermaidSankey || globalThis.mermaid_sankey)) {{
+                    throw new Error('sankey requires mermaid-sankey. Bundle static/js/mermaid-sankey.min.js and ensure registration.');
+                }}
                 const {{ svg }} = await mermaid.render('mermaid-diagram-svg', code);
 
                 diagramContent.innerHTML = svg;
