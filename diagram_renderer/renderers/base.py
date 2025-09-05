@@ -118,8 +118,61 @@ class BaseRenderer(ABC):
         return None
 
     def _generate_error_html(self, error_message):
-        """Generate consistent error HTML"""
-        return f"<div>Error: {error_message}</div>"
+        """Generate user-friendly error HTML for renderer-level failures"""
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=\"utf-8\">
+    <title>Diagram Renderer - Rendering Error</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background-color: #f8f9fa;
+            color: #24292e;
+        }}
+        .error-container {{
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }}
+        .error-icon {{ font-size: 48px; color: #f85149; margin-bottom: 16px; }}
+        h1 {{ color: #f85149; margin: 0 0 16px 0; font-size: 24px; }}
+        .error-details {{
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            color: #991b1b;
+        }}
+    </style>
+    <meta name=\"robots\" content=\"noindex\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'\">
+    <meta charset=\"UTF-8\">
+    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
+    <meta name=\"renderer\" content=\"webkit\">
+    <meta name=\"format-detection\" content=\"telephone=no\">
+    <meta name=\"msapplication-tap-highlight\" content=\"no\">
+    <meta name=\"theme-color\" content=\"#ffffff\">
+    <meta name=\"color-scheme\" content=\"light only\">
+</head>
+<body>
+    <div class=\"error-container\">
+        <div class=\"error-icon\">❌</div>
+        <h1>Diagram Rendering Error</h1>
+        <div class=\"error-details\">
+            {error_message}
+        </div>
+        <p>Tip: Check the diagram syntax and ensure all required local JS assets are bundled.</p>
+    </div>
+</body>
+</html>"""
 
     def _render_unified_html(self, dot_code, original_code, diagram_type="diagram"):
         """Generate HTML using unified template with VizJS rendering"""

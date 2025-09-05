@@ -8,6 +8,27 @@ class PlantUMLRenderer(BaseRenderer):
         """Detect if code is PlantUML"""
         code = code.strip().lower()
 
+        # Avoid false positives when common Mermaid keywords are present
+        mermaid_indicators = [
+            "flowchart ",
+            "graph ",
+            "sequencediagram",
+            "classdiagram",
+            "statediagram",
+            "erdiagram",
+            "journey",
+            "gantt",
+            "pie ",
+            "gitgraph",
+            "requirement",
+            "mindmap",
+            "timeline",
+            "block-beta",
+            "c4context",
+        ]
+        if any(ind in code for ind in mermaid_indicators):
+            return False
+
         strong_plantuml_indicators = [
             "@startuml",
             "@startmindmap",
@@ -34,17 +55,19 @@ class PlantUMLRenderer(BaseRenderer):
             else:
                 return True
 
-        plantuml_weak_indicators = [
+        # Weak indicators: only consider if they appear at line start to reduce
+        # collisions with free-text labels in other syntaxes (e.g., Mermaid)
+        plantuml_weak_indicators = (
             "boundary ",
             "control ",
             "entity ",
             "database ",
             "collections ",
             "queue ",
-        ]
-
-        for indicator in plantuml_weak_indicators:
-            if indicator in code:
+        )
+        for line in code.splitlines():
+            stripped = line.lstrip()
+            if any(stripped.startswith(tok) for tok in plantuml_weak_indicators):
                 return True
 
         if "class " in code and "classdiagram" not in code:
