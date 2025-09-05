@@ -1,3 +1,4 @@
+from ..error_pages import generate_unsupported_diagram_error_html
 from .base import BaseRenderer
 
 
@@ -96,10 +97,39 @@ class PlantUMLRenderer(BaseRenderer):
         elif any("class" in line for line in lines):
             return self._convert_class_to_dot(lines)
         else:
-            return """digraph G {
-  node [style=filled, fillcolor=white];
-  "PlantUML" -> "Local Rendering";
-}"""
+            # Instead of fallback, detect unsupported diagram types
+            return self._detect_unsupported_plantuml_type(clean_code)
+
+    def _detect_unsupported_plantuml_type(self, code):
+        """Detect unsupported PlantUML diagram types and return error"""
+        code_lower = code.lower()
+
+        # Detect specific unsupported diagram types
+        unsupported_types = [
+            ("start", "activity", "Activity diagrams with complex control flow"),
+            ("object ", "object", "Object diagrams"),
+            ("robust", "timing", "Timing diagrams"),
+            ("@startuml\nstart", "activity", "Activity diagrams"),
+            ("@startmindmap", "mindmap", "Mind maps"),
+            ("@startsalt", "salt", "Salt UI mockups"),
+            ("@startgantt", "gantt", "Gantt charts"),
+        ]
+
+        detected_type = None
+        detected_description = None
+
+        for pattern, diagram_type, description in unsupported_types:
+            if pattern in code_lower:
+                detected_type = diagram_type
+                detected_description = description
+                break
+
+        if detected_type:
+            # Return error indicator that render_html will catch
+            return f"UNSUPPORTED_PLANTUML_TYPE:{detected_type}:{detected_description}"
+
+        # If we can't detect the specific type, return a generic unsupported message
+        return "UNSUPPORTED_PLANTUML_TYPE:unknown:Advanced PlantUML features"
 
     def _convert_sequence_to_dot(self, lines):
         """Convert PlantUML sequence diagram to DOT"""
@@ -176,6 +206,23 @@ class PlantUMLRenderer(BaseRenderer):
         try:
             # Convert PlantUML to DOT
             dot_code = self.convert_plantuml_to_dot(code)
+
+            # Check if conversion returned an unsupported type indicator
+            if dot_code.startswith("UNSUPPORTED_PLANTUML_TYPE:"):
+                parts = dot_code.split(":", 2)
+                diagram_type = parts[1] if len(parts) > 1 else "unknown"
+                description = parts[2] if len(parts) > 2 else "Advanced PlantUML features"
+
+                missing_plugins = [
+                    {
+                        "type": f"plantuml-{diagram_type}",
+                        "plugin_needed": "Full PlantUML engine support",
+                        "description": f"{description} are not supported by the VizJS-based PlantUML renderer",
+                    }
+                ]
+
+                return generate_unsupported_diagram_error_html(missing_plugins, code)
+
             return self._render_unified_html(dot_code, code, "plantuml")
 
         except Exception as e:

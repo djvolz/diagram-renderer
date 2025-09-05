@@ -19,6 +19,12 @@ class MermaidRenderer(BaseRenderer):
         """Detect if code is Mermaid"""
         code_lower = code.strip().lower()
 
+        # Strong PlantUML indicators - avoid false positives
+        if code_lower.startswith("@startuml") or "@startuml" in code_lower:
+            return False
+        if code_lower.startswith("@startmindmap") or "@startmindmap" in code_lower:
+            return False
+
         # Strong Mermaid indicators (definitive)
         strong_mermaid_indicators = [
             "graph ",
