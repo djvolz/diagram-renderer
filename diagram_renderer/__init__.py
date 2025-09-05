@@ -1,6 +1,7 @@
 import re
 
 from .__version__ import __version__
+from .error_pages import generate_no_diagram_detected_error_html, generate_rendering_error_html
 from .renderers import GraphvizRenderer, MermaidRenderer, PlantUMLRenderer
 
 
@@ -117,163 +118,11 @@ class DiagramRenderer:
                 return detected_renderer.render_html(final_cleaned_code)
             else:
                 # No specific type detected - generate helpful error
-                return self._generate_no_diagram_detected_error_html(code_to_process)
+                return generate_no_diagram_detected_error_html(code_to_process)
 
         except Exception as e:
             # Generate user-friendly error HTML instead of None
-            return self._generate_rendering_error_html(code_to_process, str(e))
-
-    def _generate_no_diagram_detected_error_html(self, original_code):
-        """Generate user-friendly HTML when no diagram type is detected"""
-        return f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Diagram Renderer - No Diagram Type Detected</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px;
-            background-color: #f8f9fa;
-            color: #24292e;
-        }}
-        .error-container {{
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }}
-        .error-icon {{ font-size: 48px; color: #f85149; margin-bottom: 16px; }}
-        h1 {{ color: #f85149; margin: 0 0 16px 0; font-size: 24px; }}
-        .code-block {{
-            background: #f6f8fa;
-            border: 1px solid #d0d7de;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-        }}
-        .supported-types {{
-            background: #e7f3ff;
-            border: 1px solid #b6d7ff;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-        }}
-    </style>
-</head>
-<body>
-    <div class="error-container">
-        <div class="error-icon">🤔</div>
-        <h1>No Diagram Type Detected</h1>
-        <p>The provided code doesn't appear to be a recognized diagram format.</p>
-
-        <p><strong>Your code:</strong></p>
-        <div class="code-block">{original_code}</div>
-
-        <div class="supported-types">
-            <h3>Supported diagram types:</h3>
-            <ul>
-                <li><strong>Mermaid:</strong> flowchart, graph, sequenceDiagram, classDiagram, stateDiagram, erDiagram, gantt, pie, journey, gitGraph, requirement, mindmap</li>
-                <li><strong>PlantUML:</strong> @startuml...@enduml blocks</li>
-                <li><strong>Graphviz:</strong> digraph, graph, strict digraph, strict graph</li>
-            </ul>
-        </div>
-
-        <p><strong>Common fixes:</strong></p>
-        <ul>
-            <li>Check that your diagram starts with the correct keyword (e.g., "flowchart TD", "sequenceDiagram", "@startuml")</li>
-            <li>Ensure proper syntax for your chosen diagram type</li>
-            <li>Remove any extra markdown formatting (backticks, language tags)</li>
-        </ul>
-    </div>
-</body>
-</html>"""
-
-    def _generate_rendering_error_html(self, original_code, error_message):
-        """Generate user-friendly HTML when rendering fails with an exception"""
-        return f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Diagram Renderer - Rendering Error</title>
-    <meta name=\"diagram-render-status\" content=\"error\">
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px;
-            background-color: #f8f9fa;
-            color: #24292e;
-        }}
-        .error-container {{
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }}
-        .error-icon {{ font-size: 48px; color: #f85149; margin-bottom: 16px; }}
-        h1 {{ color: #f85149; margin: 0 0 16px 0; font-size: 24px; }}
-        .code-block {{
-            background: #f6f8fa;
-            border: 1px solid #d0d7de;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-        }}
-        .error-details {{
-            background: #fff5f5;
-            border: 1px solid #fecaca;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            color: #991b1b;
-        }}
-    </style>
-</head>
-<body>
-    <div class="error-container">
-        <div class="error-icon">❌</div>
-        <h1>Diagram Rendering Error</h1>
-        <p>An error occurred while trying to render your diagram.</p>
-
-        <div class="error-details">
-            <h3>Error details:</h3>
-            <p>{error_message}</p>
-        </div>
-
-        <p><strong>Your code:</strong></p>
-        <div class="code-block">{original_code}</div>
-
-        <p><strong>Common causes:</strong></p>
-        <ul>
-            <li>Syntax errors in the diagram code</li>
-            <li>Unsupported diagram features</li>
-            <li>Missing required plugins or libraries</li>
-            <li>Malformed diagram structure</li>
-        </ul>
-
-        <p><strong>Suggestions:</strong></p>
-        <ul>
-            <li>Check the diagram syntax against the official documentation</li>
-            <li>Try simplifying the diagram to isolate the issue</li>
-            <li>Ensure all required dependencies are available</li>
-        </ul>
-    </div>
-</body>
-</html>"""
+            return generate_rendering_error_html(code_to_process, str(e))
 
 
 # Make all components available at package level

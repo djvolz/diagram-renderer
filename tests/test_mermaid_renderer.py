@@ -159,3 +159,49 @@ class TestMermaidRendererIntegration:
         assert len(html) > 1000  # Real file should be substantial
         assert "mermaid" in html.lower()
         assert "graph TD" in html
+
+
+class TestMermaidDebugCases:
+    """Test cases derived from debug files"""
+
+    @pytest.mark.integration
+    def test_gantt_chart_rendering(self, mermaid_renderer):
+        """Test gantt chart rendering from debug_gantt.py"""
+        gantt_code = """gantt
+    title Project Development Timeline
+    dateFormat YYYY-MM-DD
+    section Planning
+    Requirements Analysis :done, req, 2024-01-01, 2024-01-07
+    System Design :done, design, 2024-01-05, 2024-01-12
+
+    section Development
+    Backend Development :active, backend, 2024-01-10, 2024-02-15
+    Frontend Development :frontend, 2024-01-20, 2024-02-20"""
+
+        # Test detection
+        assert mermaid_renderer.detect_diagram_type(gantt_code) is True
+
+        # Test rendering produces HTML
+        html_output = mermaid_renderer.render_html(gantt_code)
+        assert html_output is not None
+        assert "gantt" in html_output.lower()
+        assert "mermaid" in html_output.lower()
+
+    @pytest.mark.integration
+    def test_block_diagram_external_handling(self, mermaid_renderer):
+        """Test block diagram external handling from test_block.py"""
+        block_code = """block-beta
+    columns 1
+    A
+    B
+    A --> B"""
+
+        # Test detection
+        assert mermaid_renderer.detect_diagram_type(block_code) is True
+
+        # Test that it shows proper external diagram error
+        html_output = mermaid_renderer.render_html(block_code)
+        assert html_output is not None
+        assert "Unsupported Diagram Type" in html_output
+        assert "block-beta" in html_output
+        assert "diagram-render-status" in html_output
