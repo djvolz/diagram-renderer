@@ -25,9 +25,12 @@ class MermaidRenderer(BaseRenderer):
         if code_lower.startswith("@startmindmap") or "@startmindmap" in code_lower:
             return False
 
-        # Strong Mermaid indicators (definitive)
+        # Strong Mermaid indicators (definitive) - check these first
         strong_mermaid_indicators = [
-            "graph ",
+            "graph td",
+            "graph lr",
+            "graph bt",
+            "graph rl",  # Mermaid graph with direction
             "flowchart ",
             "sequencediagram",
             "classdiagram",
@@ -67,6 +70,14 @@ class MermaidRenderer(BaseRenderer):
                 or ("participant " in code_lower and ("as " in code_lower or ":" in code_lower))
             ):
                 return True
+
+        # Strong Graphviz indicators - avoid false positives (check after Mermaid checks)
+        if code_lower.startswith("digraph") or (
+            code_lower.startswith("graph") and "{" in code_lower
+        ):
+            return False
+        if code_lower.startswith("strict digraph") or code_lower.startswith("strict graph"):
+            return False
 
         return False
 

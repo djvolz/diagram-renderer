@@ -205,3 +205,84 @@ class TestMermaidDebugCases:
         assert "Unsupported Diagram Type" in html_output
         assert "block-beta" in html_output
         assert "diagram-render-status" in html_output
+
+
+class TestPlantUMLRendererCoverage:
+    """Test cases for PlantUML renderer to match Mermaid coverage"""
+
+    @pytest.mark.integration
+    def test_plantuml_sequence_diagram_rendering(self):
+        """Test PlantUML sequence diagram rendering"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        sequence_code = """@startuml
+actor User
+participant System
+User -> System: Login
+System --> User: Success
+@enduml"""
+
+        # Test detection
+        assert renderer.detect_diagram_type(sequence_code) is True
+
+        # Test rendering produces HTML
+        html_output = renderer.render_html(sequence_code)
+        assert html_output is not None
+        assert "VizJS" in html_output
+        assert "User" in html_output
+
+    @pytest.mark.integration
+    def test_plantuml_class_diagram_rendering(self):
+        """Test PlantUML class diagram rendering"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        class_code = """@startuml
+class User {
+  +login()
+}
+class System {
+  +authenticate()
+}
+User --> System
+@enduml"""
+
+        # Test detection
+        assert renderer.detect_diagram_type(class_code) is True
+
+        # Test rendering produces HTML
+        html_output = renderer.render_html(class_code)
+        assert html_output is not None
+        assert "VizJS" in html_output
+        assert "User" in html_output
+
+    @pytest.mark.integration
+    def test_plantuml_unsupported_diagram_error(self):
+        """Test PlantUML unsupported diagram error handling"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        activity_code = """@startuml
+start
+:Step 1;
+if (condition?) then (yes)
+  :Step 2;
+else (no)
+  :Step 3;
+endif
+stop
+@enduml"""
+
+        # Test detection still works
+        assert renderer.detect_diagram_type(activity_code) is True
+
+        # Test that it shows proper unsupported diagram error
+        html_output = renderer.render_html(activity_code)
+        assert html_output is not None
+        assert "Unsupported Diagram Type" in html_output
+        assert "Activity diagrams" in html_output
+        assert "diagram-render-status" in html_output

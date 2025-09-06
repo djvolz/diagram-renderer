@@ -219,6 +219,19 @@ class BaseRenderer(ABC):
                     const dotString = {escaped_dot};
                     viz.renderSVGElement(dotString).then(function(svgElement) {{
                         diagramContent.innerHTML = '';
+
+                        // Ensure readable styling for Graphviz diagrams
+                        if (svgElement && svgElement.tagName === 'svg') {{
+                            svgElement.style.backgroundColor = 'white';
+                            // Force text to be black for readability
+                            const textElements = svgElement.querySelectorAll('text');
+                            textElements.forEach(function(text) {{
+                                if (!text.getAttribute('fill') || text.getAttribute('fill') === 'black') {{
+                                    text.setAttribute('fill', 'black');
+                                }}
+                            }});
+                        }}
+
                         diagramContent.appendChild(svgElement);
 
                         // Initialize pan/zoom after SVG is rendered
