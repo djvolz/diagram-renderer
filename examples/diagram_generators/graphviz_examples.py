@@ -1,19 +1,14 @@
-#!/usr/bin/env python3
 """
-Generate Graphviz example HTML files with various diagram types
+Graphviz diagram example definitions.
 """
 
-import os
-from pathlib import Path
 
-from diagram_renderer import DiagramRenderer
-
-
-def get_graphviz_example_diagrams():
-    """Define all Graphviz example diagrams with various types"""
+def get_graphviz_examples():
+    """Get all Graphviz diagram examples"""
     return {
         "graphviz_directed_graph.html": {
             "name": "Graphviz Directed Graph",
+            "type": "graphviz",
             "code": """digraph system_architecture {
     rankdir=TB;
     bgcolor=white;
@@ -52,6 +47,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_undirected_graph.html": {
             "name": "Graphviz Undirected Graph",
+            "type": "graphviz",
             "code": """graph network_topology {
     layout=neato;
     bgcolor=white;
@@ -89,6 +85,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_flowchart.html": {
             "name": "Graphviz Flowchart",
+            "type": "graphviz",
             "code": """digraph order_process {
     rankdir=TD;
     bgcolor=white;
@@ -127,6 +124,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_hierarchy.html": {
             "name": "Graphviz Organizational Chart",
+            "type": "graphviz",
             "code": """digraph org_chart {
     rankdir=TB;
     bgcolor=white;
@@ -171,6 +169,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_state_machine.html": {
             "name": "Graphviz State Machine",
+            "type": "graphviz",
             "code": """digraph user_session {
     rankdir=LR;
     bgcolor=white;
@@ -207,6 +206,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_network_diagram.html": {
             "name": "Graphviz Network Diagram",
+            "type": "graphviz",
             "code": """graph data_flow {
     layout=dot;
     rankdir=LR;
@@ -262,6 +262,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_dependency_graph.html": {
             "name": "Graphviz Dependency Graph",
+            "type": "graphviz",
             "code": """digraph dependencies {
     rankdir=TB;
     bgcolor=white;
@@ -295,6 +296,7 @@ def get_graphviz_example_diagrams():
         },
         "graphviz_cluster_diagram.html": {
             "name": "Graphviz Cluster Diagram",
+            "type": "graphviz",
             "code": """digraph microservices {
     compound=true;
     rankdir=TB;
@@ -361,160 +363,3 @@ def get_graphviz_example_diagrams():
 }""",
         },
     }
-
-
-def regenerate_all_graphviz_examples():
-    """Regenerate all Graphviz example HTML files"""
-    examples_dir = Path(__file__).parent
-    renderer = DiagramRenderer()
-
-    diagrams = get_graphviz_example_diagrams()
-    results = {"success": [], "failed": []}
-
-    print("🚀 Regenerating all Graphviz example HTML files...\n")
-
-    for filename, diagram_info in diagrams.items():
-        file_path = examples_dir / filename
-        print(f"📝 Generating {diagram_info['name']}...")
-
-        try:
-            html_output = renderer.render_diagram_auto(diagram_info["code"])
-
-            if html_output:
-                # Write file regardless so users can see the error UI when present
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(html_output)
-
-                # Classify status by scanning for our error markers
-                lowered = html_output.lower()
-                has_error_meta = (
-                    'name="diagram-render-status" content="error"' in html_output
-                    or "name='diagram-render-status' content='error'" in html_output
-                )
-                is_unsupported = "unsupported diagram type" in lowered
-                is_render_error = has_error_meta
-                if is_unsupported or is_render_error:
-                    print(f"❌ {filename} - Rendered with error UI")
-                    results["failed"].append(filename)
-                else:
-                    print(f"✅ {filename} - Success")
-                    results["success"].append(filename)
-            else:
-                print(f"❌ {filename} - Failed to render (returned None)")
-                results["failed"].append(filename)
-
-        except Exception as e:
-            print(f"❌ {filename} - Error: {e}")
-            results["failed"].append(filename)
-
-    # Summary
-    print("\n📊 Graphviz Regeneration Results:")
-    print(f"✅ Success: {len(results['success'])}")
-    print(f"❌ Failed: {len(results['failed'])}")
-
-    if results["failed"]:
-        print("\n⚠️  Failed files:")
-        for failed_file in results["failed"]:
-            print(f"   - {failed_file}")
-
-    print("\n🌐 You can view the examples at: http://localhost:8000/")
-
-    return results
-
-
-def generate_graphviz_showcase(results):
-    """Generate Graphviz showcase HTML file"""
-    showcase_content = """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Graphviz Examples Showcase</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            transition: transform 0.2s;
-        }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .card h3 { margin: 0 0 10px 0; color: #2c3e50; }
-        .card a {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #8B4513;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .card a:hover { background: #654321; }
-        .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 10px; }
-        .working { background: #d4edda; color: #155724; }
-        .broken { background: #f8d7da; color: #721c24; }
-        .beta { background: #fff3cd; color: #856404; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🕸️ Graphviz Examples Showcase</h1>
-        <p style="text-align: center; color: #666; margin-bottom: 40px;">
-            Interactive Graphviz diagrams with consistent UI, pan/zoom controls, and download options
-        </p>
-
-        <div class="grid">"""
-
-    diagrams = get_graphviz_example_diagrams()
-    for filename, diagram_info in diagrams.items():
-        status_class = "working" if filename in results["success"] else "broken"
-        status_text = "✅ Working" if filename in results["success"] else "❌ Broken"
-
-        showcase_content += f"""
-            <div class="card">
-                <h3>{diagram_info["name"]}<span class="status {status_class}">{status_text}</span></h3>
-                <p>Interactive Graphviz diagram with pan/zoom controls and export options.</p>
-                <a href="{filename}">View Example →</a>
-            </div>"""
-
-    showcase_content += """
-        </div>
-
-        <div style="margin-top: 40px; text-align: center; color: #666;">
-            <p><strong>🎯 All examples feature:</strong></p>
-            <p>🖱️ Pan/zoom controls • ⌨️ Keyboard shortcuts • 💾 Download options • 📋 Copy to clipboard</p>
-        </div>
-
-        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-            <h3>🕸️ Graphviz Resources</h3>
-            <p><strong>Documentation:</strong> <a href="https://graphviz.org/">Graphviz.org</a></p>
-            <p><strong>Diagram Types:</strong> Directed Graphs, Undirected Graphs, Flowcharts, Hierarchies, State Machines, Networks, Clusters</p>
-            <p><strong>Layouts:</strong> dot, neato, fdp, sfdp, circo, twopi</p>
-        </div>
-    </div>
-</body>
-</html>"""
-
-    showcase_path = Path(__file__).parent / "graphviz_showcase.html"
-    with open(showcase_path, "w", encoding="utf-8") as f:
-        f.write(showcase_content)
-
-    print(f"📋 Generated Graphviz showcase at: {showcase_path}")
-    return showcase_path
-
-
-if __name__ == "__main__":
-    results = regenerate_all_graphviz_examples()
-    generate_graphviz_showcase(results)
-    print(
-        "🎉 Graphviz examples complete! Run the server and visit the showcase to see all examples."
-    )

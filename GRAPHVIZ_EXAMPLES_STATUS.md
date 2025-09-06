@@ -2,7 +2,7 @@
 
 This document tracks the status of all Graphviz example HTML files in the `examples/` directory, documenting which diagrams render correctly and their capabilities.
 
-**See also**: [Mermaid Examples Status](EXAMPLE_DIAGRAMS_STATUS.md) | [PlantUML Examples Status](PLANTUML_EXAMPLES_STATUS.md) | [Mermaid Showcase](examples/mermaid_showcase.html) | [PlantUML Showcase](examples/plantuml_showcase.html) | [Graphviz Showcase](examples/graphviz_showcase.html)
+**See also**: [Mermaid Examples Status](EXAMPLE_DIAGRAMS_STATUS.md) | [PlantUML Examples Status](PLANTUML_EXAMPLES_STATUS.md) | [**🎨 Unified Showcase**](examples/diagram_showcase.html)
 
 ## Testing Method
 - Local server running at `http://localhost:8000`
