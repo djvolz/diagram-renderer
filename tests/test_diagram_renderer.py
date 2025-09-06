@@ -14,14 +14,14 @@ class TestDiagramRenderer:
         from diagram_renderer.renderers.mermaid import MermaidRenderer
         from diagram_renderer.renderers.plantuml import PlantUMLRenderer
 
-        assert diagram_renderer.renderers[0][0] == "graphviz"
-        assert isinstance(diagram_renderer.renderers[0][1], GraphvizRenderer)
+        assert diagram_renderer.renderers[0][0] == "mermaid"
+        assert isinstance(diagram_renderer.renderers[0][1], MermaidRenderer)
 
         assert diagram_renderer.renderers[1][0] == "plantuml"
         assert isinstance(diagram_renderer.renderers[1][1], PlantUMLRenderer)
 
-        assert diagram_renderer.renderers[2][0] == "mermaid"
-        assert isinstance(diagram_renderer.renderers[2][1], MermaidRenderer)
+        assert diagram_renderer.renderers[2][0] == "graphviz"
+        assert isinstance(diagram_renderer.renderers[2][1], GraphvizRenderer)
 
     def test_detect_diagram_type_mermaid(self, diagram_renderer, sample_mermaid_flowchart):
         """Test diagram type detection for Mermaid"""
@@ -62,7 +62,7 @@ class TestDiagramRenderer:
         """Test automatic rendering for Mermaid diagrams"""
         # Mock the Mermaid renderer to avoid JS file dependency
         mock_html_content = "<svg>Mermaid Mock SVG</svg>"
-        mermaid_renderer_instance = diagram_renderer.renderers[2][1]
+        mermaid_renderer_instance = diagram_renderer.renderers[0][1]  # Mermaid is now first
         monkeypatch.setattr(
             mermaid_renderer_instance,
             "render_html",
@@ -78,7 +78,7 @@ class TestDiagramRenderer:
         """Test automatic rendering for PlantUML diagrams"""
         # Mock the PlantUML renderer to avoid VizJS dependency
         mock_html_content = "<svg>PlantUML Mock SVG</svg>"
-        plantuml_renderer_instance = diagram_renderer.renderers[1][1]
+        plantuml_renderer_instance = diagram_renderer.renderers[1][1]  # PlantUML is second
         monkeypatch.setattr(
             plantuml_renderer_instance,
             "render_html",
@@ -94,7 +94,7 @@ class TestDiagramRenderer:
         """Test automatic rendering for Graphviz diagrams"""
         # Mock the Graphviz renderer to avoid VizJS dependency
         mock_html_content = "<svg>Graphviz Mock SVG</svg>"
-        graphviz_renderer_instance = diagram_renderer.renderers[0][1]
+        graphviz_renderer_instance = diagram_renderer.renderers[2][1]  # Graphviz is now third
         monkeypatch.setattr(
             graphviz_renderer_instance,
             "render_html",
@@ -114,7 +114,7 @@ class TestDiagramRendererIntegration:
         # Mock to avoid JS file dependency
         import unittest.mock
 
-        mermaid_renderer_instance = diagram_renderer.renderers[2][1]
+        mermaid_renderer_instance = diagram_renderer.renderers[0][1]  # Mermaid is now first
         with unittest.mock.patch.object(
             mermaid_renderer_instance, "get_static_js_content", return_value="// mock"
         ):
@@ -133,7 +133,7 @@ class TestDiagramRendererIntegration:
         # Mock to avoid VizJS dependency
         import unittest.mock
 
-        plantuml_renderer_instance = diagram_renderer.renderers[1][1]
+        plantuml_renderer_instance = diagram_renderer.renderers[1][1]  # PlantUML is second
         with unittest.mock.patch.object(
             plantuml_renderer_instance, "get_static_js_content", return_value="// mock"
         ):
@@ -153,8 +153,8 @@ class TestDiagramRendererIntegration:
         import unittest.mock
 
         # Mock both renderers
-        mermaid_renderer_instance = diagram_renderer.renderers[2][1]
-        plantuml_renderer_instance = diagram_renderer.renderers[1][1]
+        mermaid_renderer_instance = diagram_renderer.renderers[0][1]  # Mermaid is now first
+        plantuml_renderer_instance = diagram_renderer.renderers[1][1]  # PlantUML is second
         with unittest.mock.patch.object(
             mermaid_renderer_instance, "get_static_js_content", return_value="// mock"
         ):
@@ -207,16 +207,15 @@ class TestDiagramRendererErrorHandling:
         def mock_render_error(code, **kwargs):
             raise Exception("Mock renderer error")
 
-        mermaid_renderer_instance = diagram_renderer.renderers[2][1]
+        mermaid_renderer_instance = diagram_renderer.renderers[0][1]  # Mermaid is now first
         monkeypatch.setattr(mermaid_renderer_instance, "render_html", mock_render_error)
 
-        # The renderer should handle the exception gracefully and return None
+        # The renderer should handle the exception gracefully and return error HTML
         result = diagram_renderer.render_diagram_auto(sample_mermaid_flowchart)
-        assert result is None
-
-        # Check that the error was logged
-        captured = capsys.readouterr()
-        assert "Warning: Failed to render diagram: Mock renderer error" in captured.out
+        assert result is not None
+        assert "Diagram Rendering Error" in result
+        assert "Mock renderer error" in result
+        assert "diagram-render-status" in result
 
     def test_empty_code_handling(self, diagram_renderer):
         """Test handling of empty or whitespace-only code"""
@@ -233,7 +232,7 @@ class TestDiagramRendererErrorHandling:
         long_code = "graph TD\n" + "\n".join([f"  A{i} --> A{i + 1}" for i in range(1000)])
 
         # Mock to avoid actual rendering
-        mermaid_renderer_instance = diagram_renderer.renderers[2][1]
+        mermaid_renderer_instance = diagram_renderer.renderers[0][1]  # Mermaid is now first
         monkeypatch.setattr(
             mermaid_renderer_instance,
             "render_html",
