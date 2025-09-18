@@ -4,7 +4,9 @@ Showcases all supported diagram types with comprehensive examples
 """
 
 import streamlit as st
-from streamlit_diagram import StreamlitDiagramRenderer
+import streamlit.components.v1 as components
+
+from diagram_renderer import DiagramRenderer
 
 
 def get_mermaid_examples():
@@ -81,9 +83,9 @@ def get_mermaid_examples():
         +getSubtotal()
     }
 
-    User "1" --> "0..*" Order : places
-    Order "1" --> "1..*" OrderItem : contains
-    Product "1" --> "0..*" OrderItem : included_in""",
+    User ||--o{ Order : places
+    Order ||--o{ OrderItem : contains
+    Product ||--o{ OrderItem : included_in""",
         "State Diagram": """stateDiagram-v2
     [*] --> Idle
 
@@ -720,7 +722,7 @@ def main():
     )
 
     # Initialize renderer
-    renderer = StreamlitDiagramRenderer()
+    renderer = DiagramRenderer()
 
     # Sidebar for diagram selection
     with st.sidebar:
@@ -757,6 +759,7 @@ def main():
         st.markdown(
             """
             ### 🎯 Features
+            - 🔄 **Auto-renders** when you select examples
             - ✨ Auto-detects diagram type
             - 🖱️ Interactive pan & zoom
             - 📥 Download as PNG or source
@@ -784,34 +787,41 @@ def main():
             key="code_editor",
         )
 
+        # Store the current code and auto-detect type
+        if diagram_code.strip():
+            st.session_state.diagram_code = diagram_code
+            st.session_state.detected_type = renderer.detect_diagram_type(diagram_code)
+            st.session_state.should_render = True
+
+        # Show detection status
+        if hasattr(st.session_state, "detected_type"):
+            if st.session_state.detected_type:
+                st.success(f"✅ Detected: **{st.session_state.detected_type.upper()}** diagram")
+            else:
+                st.warning("⚠️ Could not detect diagram type. Please check syntax.")
+
         # Action buttons
-        col_btn1, col_btn2, col_btn3 = st.columns(3)
+        col_btn1, col_btn2 = st.columns(2)
 
         with col_btn1:
-            render_btn = st.button("🎨 Render", type="primary", use_container_width=True)
+            refresh_btn = st.button(
+                "🔄 Refresh",
+                type="primary",
+                use_container_width=True,
+                help="Force re-render the diagram",
+            )
 
         with col_btn2:
-            validate_btn = st.button("✓ Validate", use_container_width=True)
-
-        with col_btn3:
-            clear_btn = st.button("🗑️ Clear", use_container_width=True)
+            clear_btn = st.button("🗑️ Clear", use_container_width=True, help="Clear the editor")
 
         if clear_btn:
             st.session_state.diagram_code = ""
+            st.session_state.detected_type = None
+            st.session_state.should_render = False
             st.rerun()
 
-        if validate_btn or render_btn:
-            if diagram_code.strip():
-                st.session_state.diagram_code = diagram_code
-                detected = renderer.detect_diagram_type(diagram_code)
-                st.session_state.detected_type = detected
-
-                if detected:
-                    st.success(f"✅ Detected: **{detected.upper()}** diagram")
-                else:
-                    st.warning("⚠️ Could not detect diagram type. Please check syntax.")
-            else:
-                st.error("❌ Please enter diagram code!")
+        if refresh_btn:
+            st.session_state.should_render = True
 
     with col2:
         st.header("🖼️ Preview")
@@ -829,29 +839,32 @@ def main():
                 """
             )
 
-        # Render diagram
-        if render_btn and hasattr(st.session_state, "diagram_code"):
-            if st.session_state.detected_type:
+        # Auto-render diagram when code changes or example is selected
+        if hasattr(st.session_state, "diagram_code") and hasattr(st.session_state, "should_render"):
+            if st.session_state.should_render and st.session_state.detected_type:
                 with st.container():
-                    success = renderer.render_diagram_auto(
-                        st.session_state.diagram_code, height=500
-                    )
-
-                    if success:
-                        st.success("✅ Rendered successfully!")
-                    else:
-                        st.error("❌ Rendering failed. Check your syntax.")
-            else:
-                st.warning("⚠️ No valid diagram detected")
+                    try:
+                        html_content = renderer.render_diagram_auto(st.session_state.diagram_code)
+                        if html_content:
+                            components.html(html_content, height=500, width=None, scrolling=False)
+                            with st.container():
+                                st.success("✅ Rendered successfully!")
+                        else:
+                            st.error("❌ Rendering failed. Check your syntax.")
+                    except Exception as e:
+                        st.error(f"❌ Error rendering diagram: {str(e)}")
+            elif st.session_state.should_render:
+                st.warning("⚠️ No valid diagram detected. Please check your syntax.")
         else:
-            # Show placeholder
-            st.info("👆 Click **Render** to preview your diagram")
+            st.info(
+                "💡 Select an example or paste your diagram code to see it rendered automatically."
+            )
 
-            # Show quick stats
-            if hasattr(st.session_state, "diagram_code") and st.session_state.diagram_code:
-                lines = st.session_state.diagram_code.count("\n") + 1
-                chars = len(st.session_state.diagram_code)
-                st.caption(f"📊 {lines} lines, {chars} characters")
+        # Show quick stats
+        if hasattr(st.session_state, "diagram_code") and st.session_state.diagram_code:
+            lines = st.session_state.diagram_code.count("\n") + 1
+            chars = len(st.session_state.diagram_code)
+            st.caption(f"📊 {lines} lines, {chars} characters")
 
     # Footer
     st.markdown("---")

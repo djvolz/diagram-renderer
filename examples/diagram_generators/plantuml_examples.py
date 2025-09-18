@@ -75,7 +75,7 @@ class OrderItem {
 
 User ||--o{ Order : places
 Order ||--o{ OrderItem : contains
-Product ||--o{ OrderItem : "included in"
+Product ||--o{ OrderItem : included_in
 @enduml""",
         },
         "plantuml_use_case_diagram.html": {
