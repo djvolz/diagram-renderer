@@ -386,8 +386,32 @@ class PlantUMLRenderer(BaseRenderer):
                 in_class_body = False
 
             # Parse relationships (when not inside a class body)
-            elif not in_class_body and ("-->" in line_stripped or "<|--" in line_stripped):
-                if "-->" in line_stripped:
+            elif not in_class_body and (
+                "-->" in line_stripped or "<|--" in line_stripped or "||--" in line_stripped
+            ):
+                # Handle different PlantUML relationship notations
+                if "||--o{" in line_stripped:
+                    # One-to-many composition: User ||--o{ Order
+                    parts = line_stripped.split("||--o{")
+                    if len(parts) == 2:
+                        from_class = parts[0].strip()
+                        to_part = parts[1].strip()
+
+                        # Handle label
+                        if ":" in to_part:
+                            to_class = to_part.split(":")[0].strip()
+                            label = to_part.split(":", 1)[1].strip()
+                            # Remove surrounding quotes from label if present
+                            if label.startswith('"') and label.endswith('"'):
+                                label = label[1:-1]
+                        else:
+                            to_class = to_part.strip()
+                            label = ""
+
+                        if from_class and to_class:
+                            relationships.append((from_class, to_class, "association", label))
+
+                elif "-->" in line_stripped:
                     # Association: User "1" --> "0..*" Order : places
                     parts = line_stripped.split("-->")
                     if len(parts) == 2:
@@ -405,6 +429,9 @@ class PlantUMLRenderer(BaseRenderer):
                         if ":" in to_part:
                             to_with_card = to_part.split(":")[0].strip()
                             label = to_part.split(":", 1)[1].strip()
+                            # Remove surrounding quotes from label if present
+                            if label.startswith('"') and label.endswith('"'):
+                                label = label[1:-1]
                         else:
                             to_with_card = to_part
                             label = ""
@@ -452,7 +479,9 @@ class PlantUMLRenderer(BaseRenderer):
                 dot += f'  "{from_cls}" -> "{to_cls}" [arrowhead=empty];\n'
             elif rel_type == "association":
                 if label:
-                    dot += f'  "{from_cls}" -> "{to_cls}" [label="{label}"];\n'
+                    # Escape quotes in label and ensure it's properly quoted
+                    escaped_label = label.replace('"', '\\"')
+                    dot += f'  "{from_cls}" -> "{to_cls}" [label="{escaped_label}"];\n'
                 else:
                     dot += f'  "{from_cls}" -> "{to_cls}";\n'
 
