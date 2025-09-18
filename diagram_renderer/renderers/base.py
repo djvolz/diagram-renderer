@@ -1,6 +1,10 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any, Optional
+
+from ..resource_cache import get_cached_resource
+from ..template_engine import TemplateEngine
 
 # Template name constants
 TEMPLATE_UNIFIED = "unified.html"
@@ -9,173 +13,109 @@ TEMPLATE_UNIFIED = "unified.html"
 class BaseRenderer(ABC):
     """Base class for diagram renderers"""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the base renderer."""
         # Get static directory relative to this module
         module_dir = Path(__file__).parent  # diagram/renderers
         self.static_dir = module_dir / "static"
         self.use_local_rendering = True
+        self.template_engine = TemplateEngine()
 
     @abstractmethod
-    def render_html(self, code, **kwargs):
-        """Render diagram as HTML"""
+    def render_html(self, code: str, **kwargs: Any) -> str:
+        """Render diagram as HTML.
+
+        Args:
+            code: Diagram source code
+            **kwargs: Additional rendering options
+
+        Returns:
+            Complete HTML document with rendered diagram
+        """
         pass
 
     @abstractmethod
-    def clean_code(self, code):
-        """Clean diagram code (remove markdown formatting)"""
+    def clean_code(self, code: str) -> str:
+        """Clean diagram code (remove markdown formatting).
+
+        Args:
+            code: Raw diagram code potentially with markdown
+
+        Returns:
+            Cleaned diagram code
+        """
         pass
 
-    def detect_diagram_type(self, code):
-        """Detect if code matches this renderer type"""
+    def detect_diagram_type(self, code: str) -> bool:
+        """Detect if code matches this renderer type.
+
+        Args:
+            code: Diagram code to check
+
+        Returns:
+            True if this renderer can handle the code
+        """
         # To be implemented by subclasses
         return False
 
-    def get_static_js_content(self, filename):
-        """Get JavaScript content from static file"""
-        # Try using importlib.resources first (recommended for package data)
-        try:
-            from importlib.resources import files
+    def get_static_js_content(self, filename: str) -> Optional[str]:
+        """Get JavaScript content from static file with caching.
 
-            js_dir = files("diagram_renderer.renderers") / "static" / "js"
-            js_file = js_dir / filename
-            if js_file.is_file():
-                return js_file.read_text(encoding="utf-8")
-        except (ImportError, FileNotFoundError, ModuleNotFoundError, AttributeError):
-            pass
+        Args:
+            filename: Name of the JavaScript file
 
-        # Fallback to file system path
-        js_file = self.static_dir / "js" / filename
-        if js_file.exists():
-            with open(js_file, encoding="utf-8") as f:
-                return f.read()
-        return None
+        Returns:
+            JavaScript content or None if not found
+        """
+        # Use the resource cache for efficient loading
+        fallback_paths = [self.static_dir / "js"]
+        return get_cached_resource(
+            resource_type="static/js", filename=filename, fallback_paths=fallback_paths
+        )
 
-    def get_template_content(self, filename):
-        """Get HTML template content from templates directory"""
-        # Try using importlib.resources first (recommended for package data)
-        try:
-            from importlib.resources import files
+    def get_template_content(self, filename: str) -> Optional[str]:
+        """Get HTML template content from templates directory with caching.
 
-            template_dir = files("diagram_renderer.renderers") / "templates"
-            template_file = template_dir / filename
-            if template_file.is_file():
-                return template_file.read_text(encoding="utf-8")
-        except (ImportError, FileNotFoundError, ModuleNotFoundError, AttributeError):
-            # Try older importlib.resources API (Python 3.8)
-            try:
-                import importlib.resources as pkg_resources
+        Args:
+            filename: Name of the template file
 
-                with pkg_resources.path(
-                    "diagram_renderer.renderers", "templates"
-                ) as templates_path:
-                    template_file = templates_path / filename
-                    if template_file.exists():
-                        return template_file.read_text(encoding="utf-8")
-            except (ImportError, FileNotFoundError, ModuleNotFoundError, AttributeError):
-                pass
+        Returns:
+            Template content or None if not found
+        """
+        # Define fallback paths for template loading
+        fallback_paths = [Path(__file__).parent / "templates", self.static_dir.parent / "templates"]
 
-        # Fallback to file system paths with more comprehensive search
-        possible_paths = [
-            # From current module directory
-            Path(__file__).parent / "templates" / filename,
-            # From static_dir parent (renderers/templates/)
-            self.static_dir.parent / "templates" / filename,
-            # From package root
-            Path(__file__).parent.parent / "renderers" / "templates" / filename,
-            # Alternative package structure
-            Path(__file__).resolve().parent / "templates" / filename,
-        ]
+        # Use the resource cache for efficient loading
+        return get_cached_resource(
+            resource_type="templates", filename=filename, fallback_paths=fallback_paths
+        )
 
-        for template_file in possible_paths:
-            try:
-                if template_file.exists() and template_file.is_file():
-                    with open(template_file, encoding="utf-8") as f:
-                        return f.read()
-            except OSError:
-                continue
+    def _generate_error_html(self, error_message: str) -> str:
+        """Generate user-friendly error HTML for renderer-level failures.
 
-        # Debug info for troubleshooting
-        import os
+        Args:
+            error_message: The error message to display
 
-        debug_info = f"Template '{filename}' not found. Tried importlib.resources and paths:\n"
-        for path in possible_paths:
-            try:
-                exists = path.exists()
-            except Exception:
-                exists = "error"
-            debug_info += f"  - {path} (exists: {exists})\n"
-        debug_info += f"Current working directory: {os.getcwd()}\n"
-        debug_info += f"Module file location: {__file__}\n"
+        Returns:
+            Complete HTML error page
+        """
+        return self.template_engine.generate_error_html(
+            error_type="Rendering Error", error_message=error_message, show_help=True
+        )
 
-        # Try to list what's actually in the templates directory if it exists
-        templates_dir = Path(__file__).parent / "templates"
-        if templates_dir.exists():
-            debug_info += f"Templates directory contents: {list(templates_dir.iterdir())}\n"
-        else:
-            debug_info += f"Templates directory does not exist at: {templates_dir}\n"
+    def _render_unified_html(
+        self, dot_code: str, original_code: str, diagram_type: str = "diagram"
+    ) -> str:
+        """Generate HTML using unified template with VizJS rendering.
 
-        print(debug_info)  # This will show in test output
-        return None
+        Args:
+            dot_code: GraphViz DOT format code
+            original_code: Original diagram code before conversion
+            diagram_type: Type of diagram being rendered
 
-    def _generate_error_html(self, error_message):
-        """Generate user-friendly error HTML for renderer-level failures"""
-        return f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=\"utf-8\">
-    <title>Diagram Renderer - Rendering Error</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px;
-            background-color: #f8f9fa;
-            color: #24292e;
-        }}
-        .error-container {{
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }}
-        .error-icon {{ font-size: 48px; color: #f85149; margin-bottom: 16px; }}
-        h1 {{ color: #f85149; margin: 0 0 16px 0; font-size: 24px; }}
-        .error-details {{
-            background: #fff5f5;
-            border: 1px solid #fecaca;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            color: #991b1b;
-        }}
-    </style>
-    <meta name=\"robots\" content=\"noindex\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-    <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'\">
-    <meta charset=\"UTF-8\">
-    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-    <meta name=\"renderer\" content=\"webkit\">
-    <meta name=\"format-detection\" content=\"telephone=no\">
-    <meta name=\"msapplication-tap-highlight\" content=\"no\">
-    <meta name=\"theme-color\" content=\"#ffffff\">
-    <meta name=\"color-scheme\" content=\"light only\">
-</head>
-<body>
-    <div class=\"error-container\">
-        <div class=\"error-icon\">❌</div>
-        <h1>Diagram Rendering Error</h1>
-        <div class=\"error-details\">
-            {error_message}
-        </div>
-        <p>Tip: Check the diagram syntax and ensure all required local JS assets are bundled.</p>
-    </div>
-</body>
-</html>"""
-
-    def _render_unified_html(self, dot_code, original_code, diagram_type="diagram"):
-        """Generate HTML using unified template with VizJS rendering"""
+        Returns:
+            Complete HTML document with rendered diagram
+        """
         # Get required JavaScript libraries
         panzoom_js = self.get_static_js_content("panzoom.min.js")
         viz_js = self._get_vizjs_content()
@@ -198,14 +138,25 @@ class BaseRenderer(ABC):
             template, viz_js, panzoom_js, original_code, vizjs_script
         )
 
-    def _get_vizjs_content(self):
-        """Get combined VizJS library content"""
+    def _get_vizjs_content(self) -> Optional[str]:
+        """Get combined VizJS library content.
+
+        Returns:
+            Combined JavaScript content or None if not found
+        """
         viz_lite = self.get_static_js_content("viz-lite.js")
         viz_full = self.get_static_js_content("viz-full.js")
         return f"{viz_lite}\n{viz_full}" if viz_lite and viz_full else None
 
-    def _generate_vizjs_rendering_script(self, dot_code):
-        """Generate JavaScript for VizJS diagram rendering"""
+    def _generate_vizjs_rendering_script(self, dot_code: str) -> str:
+        """Generate JavaScript for VizJS diagram rendering.
+
+        Args:
+            dot_code: GraphViz DOT format code
+
+        Returns:
+            JavaScript code for rendering the diagram
+        """
         escaped_dot = json.dumps(dot_code)
 
         return f"""        // VizJS rendering (matches working vizjs.html)
@@ -253,8 +204,21 @@ class BaseRenderer(ABC):
             }}
         }}"""
 
-    def _populate_unified_template(self, template, viz_js, panzoom_js, original_code, vizjs_script):
-        """Replace all placeholders in the unified template"""
+    def _populate_unified_template(
+        self, template: str, viz_js: str, panzoom_js: str, original_code: str, vizjs_script: str
+    ) -> str:
+        """Replace all placeholders in the unified template.
+
+        Args:
+            template: HTML template content
+            viz_js: VizJS JavaScript content
+            panzoom_js: Panzoom JavaScript content
+            original_code: Original diagram code
+            vizjs_script: VizJS rendering script
+
+        Returns:
+            Populated HTML template
+        """
         escaped_original = json.dumps(original_code)
 
         # Define the default render function to be replaced

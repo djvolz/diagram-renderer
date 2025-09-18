@@ -100,9 +100,17 @@ class MermaidRenderer(BaseRenderer):
         panzoom_js = self.get_static_js_content("panzoom.min.js")
 
         if not mermaid_js:
-            return generate_simple_error_html("Mermaid.js not available")
+            return generate_simple_error_html(
+                "JavaScript Library Missing",
+                "Mermaid.js library is not available. Please ensure the static/js/mermaid.min.js file is present.",
+                code,
+            )
         if not panzoom_js:
-            return generate_simple_error_html("Panzoom.js not available")
+            return generate_simple_error_html(
+                "JavaScript Library Missing",
+                "Panzoom.js library is not available. Please ensure the static/js/panzoom.min.js file is present.",
+                code,
+            )
 
         # Check for missing external plugins and provide helpful error
         missing_plugins = []
@@ -132,7 +140,11 @@ class MermaidRenderer(BaseRenderer):
         # Get and populate template
         template = self.get_template_content(TEMPLATE_UNIFIED)
         if not template:
-            return generate_simple_error_html("Unified template not available")
+            return generate_simple_error_html(
+                "Template Missing",
+                "The unified HTML template is not available. Please ensure the templates/unified.html file is present.",
+                code,
+            )
 
         # Generate Mermaid-specific rendering script
         mermaid_script = self._generate_mermaid_rendering_script(clean_code, escaped_original)

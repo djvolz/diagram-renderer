@@ -31,6 +31,15 @@ uv run pytest tests/test_diagram_renderer.py
 # Run with coverage
 uv run pytest --cov=diagram_renderer
 
+# Run visual regression tests (requires baseline images)
+python tests/visual/visual_test_runner.py
+
+# Generate/update visual baselines
+python tests/visual/baseline_generator.py
+
+# Run only visual tests via pytest
+pytest -m visual
+
 # Code formatting (auto-fixes)
 uv run ruff format .
 

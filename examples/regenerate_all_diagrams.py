@@ -7,12 +7,22 @@ Replaces separate Mermaid, PlantUML, and Graphviz generation scripts.
 import os
 from pathlib import Path
 
-from diagram_generators import (
-    generate_unified_showcase,
-    get_graphviz_examples,
-    get_mermaid_examples,
-    get_plantuml_examples,
-)
+try:
+    # When imported as a module
+    from examples.diagram_generators import (
+        generate_unified_showcase,
+        get_graphviz_examples,
+        get_mermaid_examples,
+        get_plantuml_examples,
+    )
+except ImportError:
+    # When run directly
+    from diagram_generators import (
+        generate_unified_showcase,
+        get_graphviz_examples,
+        get_mermaid_examples,
+        get_plantuml_examples,
+    )
 
 from diagram_renderer import DiagramRenderer
 

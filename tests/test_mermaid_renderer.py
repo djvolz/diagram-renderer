@@ -101,7 +101,10 @@ class TestMermaidRenderer:
 
         result = mermaid_renderer.render_html(sample_mermaid_flowchart)
 
-        assert "Mermaid.js not available" in result
+        assert (
+            "JavaScript Library Missing" in result
+            or "Mermaid.js library is not available" in result
+        )
 
 
 class TestMermaidRendererIntegration:

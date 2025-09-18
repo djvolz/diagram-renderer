@@ -213,7 +213,7 @@ class TestDiagramRendererErrorHandling:
         # The renderer should handle the exception gracefully and return error HTML
         result = diagram_renderer.render_diagram_auto(sample_mermaid_flowchart)
         assert result is not None
-        assert "Diagram Rendering Error" in result
+        assert "Rendering Error" in result
         assert "Mock renderer error" in result
         assert "diagram-render-status" in result
 
