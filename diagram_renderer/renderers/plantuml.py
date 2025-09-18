@@ -94,10 +94,25 @@ class PlantUMLRenderer(BaseRenderer):
         clean_code = self.clean_code(plantuml_code)
         lines = clean_code.split("\n")
 
-        if any("participant" in line or "actor" in line or "->" in line for line in lines):
-            return self._convert_sequence_to_dot(lines)
-        elif any("class" in line for line in lines):
+        # Check for class diagram first (before sequence)
+        if any("class " in line for line in lines):
             return self._convert_class_to_dot(lines)
+        # Check for use case diagram
+        elif any("usecase " in line or "actor " in line for line in lines):
+            if any("usecase " in line for line in lines):
+                # It's a use case diagram, not a sequence diagram
+                return self._convert_usecase_to_dot(lines)
+            elif any("participant" in line for line in lines):
+                # It has actors AND participants, likely sequence
+                return self._convert_sequence_to_dot(lines)
+            elif any("->" in line for line in lines):
+                # Has actors and arrows but no use cases, likely sequence
+                return self._convert_sequence_to_dot(lines)
+            else:
+                # Has actors but no clear diagram type
+                return self._convert_usecase_to_dot(lines)
+        elif any("participant" in line or "->" in line for line in lines):
+            return self._convert_sequence_to_dot(lines)
         else:
             # Check for known unsupported types first
             unsupported = self._detect_unsupported_plantuml_type(clean_code)
@@ -183,28 +198,226 @@ class PlantUMLRenderer(BaseRenderer):
         dot += "}"
         return dot
 
-    def _convert_class_to_dot(self, lines):
-        """Convert PlantUML class diagram to DOT"""
-        classes = []
-        relationships = []
+    def _convert_usecase_to_dot(self, lines):
+        """Convert PlantUML use case diagram to DOT"""
+        actors = []
+        use_cases = []
+        connections = []
 
         for line in lines:
             line = line.strip()
-            if line.startswith("class "):
-                class_name = line.split()[1].split("{")[0].strip()
-                classes.append(class_name)
-            elif "<|--" in line:
-                parts = line.split("<|--")
-                relationships.append((parts[1].strip(), parts[0].strip()))
+            if line.startswith("actor "):
+                # Parse actor definition
+                parts = line.replace("actor ", "").strip()
+                if " as " in parts:
+                    # actor "Payment System" as PS
+                    name = parts.split(" as ")[1].strip()
+                    actors.append(name)
+                else:
+                    # actor Customer
+                    name = parts.strip('"').strip()
+                    actors.append(name)
+            elif line.startswith("usecase "):
+                # Parse use case definition
+                parts = line.replace("usecase ", "").strip()
+                if " as " in parts:
+                    # usecase "Browse Products" as UC1
+                    label = parts.split(" as ")[0].strip('"')
+                    alias = parts.split(" as ")[1].strip()
+                    use_cases.append((alias, label))
+                else:
+                    # usecase "Browse Products"
+                    label = parts.strip('"')
+                    use_cases.append((label, label))
+            elif "-->" in line or ".>" in line or "->" in line:
+                # Parse connections
+                if "-->" in line:
+                    parts = line.split("-->")
+                    arrow_type = "normal"
+                elif ".>" in line:
+                    parts = line.split(".>")
+                    arrow_type = "dashed"
+                else:
+                    parts = line.split("->")
+                    arrow_type = "normal"
 
+                if len(parts) == 2:
+                    from_node = parts[0].strip()
+                    to_part = parts[1].strip()
+
+                    # Check for labels like ": extends"
+                    if ":" in to_part:
+                        to_node = to_part.split(":")[0].strip()
+                        label = to_part.split(":", 1)[1].strip()
+                    else:
+                        to_node = to_part
+                        label = ""
+
+                    connections.append((from_node, to_node, label, arrow_type))
+
+        # Generate DOT
+        dot = "digraph usecases {\n"
+        dot += "  rankdir=LR;\n"
+        dot += "  node [shape=box, style=filled, fillcolor=lightblue];\n"
+
+        # Add actors (different shape)
+        for actor in actors:
+            dot += f'  "{actor}" [shape=ellipse, fillcolor=lightyellow];\n'
+
+        # Add use cases
+        for alias, label in use_cases:
+            if alias != label:
+                dot += f'  "{alias}" [label="{label}"];\n'
+            else:
+                dot += f'  "{alias}";\n'
+
+        # Add connections
+        for from_node, to_node, label, arrow_type in connections:
+            style = "dashed" if arrow_type == "dashed" else "solid"
+            if label:
+                dot += f'  "{from_node}" -> "{to_node}" [label="{label}", style={style}];\n'
+            else:
+                dot += f'  "{from_node}" -> "{to_node}" [style={style}];\n'
+
+        dot += "}"
+        return dot
+
+    def _convert_class_to_dot(self, lines):
+        """Convert PlantUML class diagram to DOT"""
+        classes = {}  # Map of class name to attributes/methods
+        relationships = []
+
+        current_class = None
+        class_content = []
+        in_class_body = False
+
+        for line in lines:
+            line_stripped = line.strip()
+
+            # Skip PlantUML directives
+            if line_stripped.startswith("@") or line_stripped.startswith("!"):
+                continue
+
+            # Start of class definition
+            if line_stripped.startswith("class "):
+                # Save previous class if exists
+                if current_class:
+                    classes[current_class] = class_content
+                    class_content = []
+
+                # Parse new class
+                class_part = line_stripped.replace("class ", "")
+                if "{" in class_part:
+                    # Class name is before the brace
+                    class_name = class_part.split("{")[0].strip()
+                    in_class_body = True
+
+                    # Check if it's a one-line class definition
+                    if "}" in class_part:
+                        # Extract content between braces
+                        content = class_part[
+                            class_part.index("{") + 1 : class_part.rindex("}")
+                        ].strip()
+                        if content:
+                            class_content = content.split(";")
+                        classes[class_name] = class_content
+                        current_class = None
+                        class_content = []
+                        in_class_body = False
+                    else:
+                        current_class = class_name
+                else:
+                    # Class name is the whole part, body starts on next line
+                    class_name = class_part.strip()
+                    current_class = class_name
+                    in_class_body = False
+
+            # Opening brace on its own line
+            elif line_stripped == "{" and current_class and not in_class_body:
+                in_class_body = True
+
+            # Inside class definition
+            elif current_class and in_class_body and line_stripped != "}":
+                if line_stripped:
+                    class_content.append(line_stripped)
+
+            # End of class definition
+            elif line_stripped == "}" and current_class:
+                classes[current_class] = class_content
+                current_class = None
+                class_content = []
+                in_class_body = False
+
+            # Parse relationships (when not inside a class body)
+            elif not in_class_body and ("-->" in line_stripped or "<|--" in line_stripped):
+                if "-->" in line_stripped:
+                    # Association: User "1" --> "0..*" Order : places
+                    parts = line_stripped.split("-->")
+                    if len(parts) == 2:
+                        from_part = parts[0].strip()
+                        to_part = parts[1].strip()
+
+                        # Extract class names (ignore cardinality)
+                        # Handle quoted cardinality like "1" or unquoted
+                        from_class = from_part.split('"')[0].strip()
+                        if not from_class:  # If it starts with a quote
+                            from_tokens = from_part.split()
+                            from_class = from_tokens[0] if from_tokens else from_part
+
+                        # Handle label
+                        if ":" in to_part:
+                            to_with_card = to_part.split(":")[0].strip()
+                            label = to_part.split(":", 1)[1].strip()
+                        else:
+                            to_with_card = to_part
+                            label = ""
+
+                        # Extract to class (may have cardinality)
+                        to_tokens = to_with_card.replace('"', " ").split()
+                        to_class = to_tokens[-1] if to_tokens else to_with_card
+
+                        if from_class and to_class:
+                            relationships.append((from_class, to_class, "association", label))
+
+                elif "<|--" in line_stripped:
+                    # Inheritance
+                    parts = line_stripped.split("<|--")
+                    if len(parts) == 2:
+                        parent = parts[0].strip()
+                        child = parts[1].strip()
+                        if parent and child:
+                            relationships.append((child, parent, "inheritance", ""))
+
+        # Save last class if still open (shouldn't happen with valid PlantUML)
+        if current_class:
+            classes[current_class] = class_content
+
+        # Generate DOT
         dot = "digraph classes {\n"
-        dot += "  node [shape=record, style=filled, fillcolor=white];\n"
+        dot += "  rankdir=TB;\n"
+        dot += "  node [shape=record, style=filled, fillcolor=lightyellow];\n"
 
-        for cls in classes:
-            dot += f'  "{cls}" [label="{cls}"];\n'
+        # Add classes with their attributes/methods
+        for cls_name, attributes in classes.items():
+            if attributes:
+                # Format as record with attributes/methods
+                # Escape special characters and join attributes
+                attr_str = "\\l".join(attr.replace('"', '\\"') for attr in attributes)
+                label = f"{{{cls_name}|{attr_str}\\l}}"
+                dot += f'  "{cls_name}" [label="{label}"];\n'
+            else:
+                # Simple class with no body
+                dot += f'  "{cls_name}" [label="{cls_name}"];\n'
 
-        for parent, child in relationships:
-            dot += f'  "{parent}" -> "{child}" [arrowhead=empty];\n'
+        # Add relationships
+        for from_cls, to_cls, rel_type, label in relationships:
+            if rel_type == "inheritance":
+                dot += f'  "{from_cls}" -> "{to_cls}" [arrowhead=empty];\n'
+            elif rel_type == "association":
+                if label:
+                    dot += f'  "{from_cls}" -> "{to_cls}" [label="{label}"];\n'
+                else:
+                    dot += f'  "{from_cls}" -> "{to_cls}";\n'
 
         dot += "}"
         return dot

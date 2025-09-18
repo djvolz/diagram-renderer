@@ -193,14 +193,14 @@ class BaseRenderer(ABC):
 
                     }}).catch(function(error) {{
                         console.error('VizJS render error:', error);
-                        diagramContent.innerHTML = '<div class="error-message">VizJS Render Error: ' + error.message + '</div>';
+                        diagramContent.innerHTML = '<div class="error-message">VizJS Render Error: ' + (error.message || error) + '</div>';
                     }});
                 }} else {{
                     diagramContent.innerHTML = '<div class="error-message">VizJS not available.</div>';
                 }}
             }} catch (error) {{
                 console.error('Script error:', error);
-                diagramContent.innerHTML = '<div class="error-message">Script Error: ' + error.message + '</div>';
+                diagramContent.innerHTML = '<div class="error-message">Script Error: ' + (error.message || error) + '</div>';
             }}
         }}"""
 
