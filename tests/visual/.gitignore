@@ -1,0 +1,19 @@
+# Visual regression test artifacts (don't commit these)
+
+# Generated screenshots from test runs
+artifacts/current/
+artifacts/diffs/
+
+# Test reports
+visual_test_report_*.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache files
+__pycache__/
+*.pyc
+
+# Note: baselines/ directory SHOULD be committed
+# These are the reference images for comparison

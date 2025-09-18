@@ -1,0 +1,101 @@
+name: Visual Regression Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'diagram_renderer/**'
+      - 'examples/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'diagram_renderer/**'
+      - 'examples/**'
+      - 'tests/**'
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install dependencies with visual testing support
+      run: |
+        uv sync --extra dev
+        uv pip install pillow numpy playwright
+
+    - name: Install Playwright browsers
+      run: |
+        uv run playwright install chromium
+
+    - name: Check for baseline images
+      id: check-baselines
+      run: |
+        if [ -d "tests/visual/baselines" ] && [ "$(find tests/visual/baselines -name '*.png' | wc -l)" -gt 0 ]; then
+          echo "baselines_exist=true" >> $GITHUB_OUTPUT
+          echo "Found $(find tests/visual/baselines -name '*.png' | wc -l) baseline images"
+        else
+          echo "baselines_exist=false" >> $GITHUB_OUTPUT
+          echo "No baseline images found"
+        fi
+
+    - name: Generate baseline images (if none exist)
+      if: steps.check-baselines.outputs.baselines_exist == 'false'
+      run: |
+        echo "🎯 Generating baseline images (first time setup)"
+        uv run python tests/visual/baseline_generator.py
+
+        # Commit baseline images if this is a baseline generation run
+        if [ -n "$(git status --porcelain tests/visual/baselines/)" ]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/baselines/
+          git commit -m "ci: Add initial visual regression baselines"
+          git push
+        fi
+
+    - name: Run visual regression tests
+      if: steps.check-baselines.outputs.baselines_exist == 'true'
+      run: |
+        echo "🔍 Running visual regression tests..."
+        uv run python tests/visual/visual_test_runner.py --threshold 0.95
+
+    - name: Upload visual diff artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-regression-diffs
+        path: tests/visual/artifacts/
+        retention-days: 30
+
+    - name: Comment on PR with visual test results
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `⚠️ **Visual Regression Test Failures Detected**
+
+            Some diagram examples have visual changes that don't match the baseline images.
+
+            **Next Steps:**
+            1. Download the visual diff artifacts from this CI run
+            2. Review the diff images to understand what changed
+            3. If changes are intentional, regenerate baselines: \`python tests/visual/baseline_generator.py\`
+            4. If changes are bugs, fix the rendering issues
+
+            **Artifacts:** Check the "visual-regression-diffs" artifact for detailed diff images.`
+          });
