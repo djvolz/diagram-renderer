@@ -93,7 +93,11 @@ class TestModernizationFeatures:
 
             # Should be able to generate error HTML
             error_html = renderer._generate_error_html("Test")
-            assert error_html == "<div>Error: Test</div>"
+            # Check for new template format - it should be a full HTML page
+            assert "error" in error_html.lower()
+            assert "Rendering Error" in error_html
+            assert 'class="error-title"' in error_html
+            assert "<p>Test</p>" in error_html
 
     def test_modernized_ui_controls(self):
         """Test that modernized UI controls are present"""

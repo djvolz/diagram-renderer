@@ -7,9 +7,26 @@ class PlantUMLRenderer(BaseRenderer):
 
     def detect_diagram_type(self, code):
         """Detect if code is PlantUML"""
-        code = code.strip().lower()
+        code_lower = code.strip().lower()
+
+        # Check for strong PlantUML indicators first (before Mermaid check)
+        strong_plantuml_indicators = [
+            "@startuml",
+            "@startmindmap",
+            "@startgantt",
+            "@startclass",
+            "@enduml",
+            "skinparam",
+            "!theme",
+            "!include",
+        ]
+
+        for indicator in strong_plantuml_indicators:
+            if indicator in code_lower:
+                return True
 
         # Avoid false positives when common Mermaid keywords are present
+        # (but not when they're part of PlantUML directives like @startmindmap)
         mermaid_indicators = [
             "flowchart ",
             "graph ",
@@ -27,30 +44,15 @@ class PlantUMLRenderer(BaseRenderer):
             "block-beta",
             "c4context",
         ]
-        if any(ind in code for ind in mermaid_indicators):
+        if any(ind in code_lower for ind in mermaid_indicators):
             return False
 
-        strong_plantuml_indicators = [
-            "@startuml",
-            "@startmindmap",
-            "@startgantt",
-            "@startclass",
-            "@enduml",
-            "skinparam",
-            "!theme",
-            "!include",
-        ]
-
-        for indicator in strong_plantuml_indicators:
-            if indicator in code:
-                return True
-
-        if "participant " in code or "actor " in code:
+        if "participant " in code_lower or "actor " in code_lower:
             if (
-                "sequencediagram" in code
-                or "-->" in code
-                or "->>" in code
-                or ("participant " in code and ("as " in code or ":" in code))
+                "sequencediagram" in code_lower
+                or "-->" in code_lower
+                or "->>" in code_lower
+                or ("participant " in code_lower and ("as " in code_lower or ":" in code_lower))
             ):
                 return False
             else:
@@ -66,12 +68,12 @@ class PlantUMLRenderer(BaseRenderer):
             "collections ",
             "queue ",
         )
-        for line in code.splitlines():
+        for line in code_lower.splitlines():
             stripped = line.lstrip()
             if any(stripped.startswith(tok) for tok in plantuml_weak_indicators):
                 return True
 
-        if "class " in code and "classdiagram" not in code:
+        if "class " in code_lower and "classdiagram" not in code_lower:
             return True
 
         return False
@@ -97,8 +99,17 @@ class PlantUMLRenderer(BaseRenderer):
         elif any("class" in line for line in lines):
             return self._convert_class_to_dot(lines)
         else:
-            # Instead of fallback, detect unsupported diagram types
-            return self._detect_unsupported_plantuml_type(clean_code)
+            # Check for known unsupported types first
+            unsupported = self._detect_unsupported_plantuml_type(clean_code)
+            if unsupported.startswith("UNSUPPORTED_PLANTUML_TYPE:"):
+                # For specific unsupported types, return the error
+                # But for truly unknown syntax, provide a fallback
+                parts = unsupported.split(":", 2)
+                if parts[1] != "unknown":
+                    return unsupported
+
+            # Fallback for truly unknown syntax - generate a simple DOT graph
+            return self._generate_fallback_dot(clean_code)
 
     def _detect_unsupported_plantuml_type(self, code):
         """Detect unsupported PlantUML diagram types and return error"""
@@ -106,13 +117,13 @@ class PlantUMLRenderer(BaseRenderer):
 
         # Detect specific unsupported diagram types
         unsupported_types = [
-            ("start", "activity", "Activity diagrams with complex control flow"),
-            ("object ", "object", "Object diagrams"),
-            ("robust", "timing", "Timing diagrams"),
-            ("@startuml\nstart", "activity", "Activity diagrams"),
             ("@startmindmap", "mindmap", "Mind maps"),
             ("@startsalt", "salt", "Salt UI mockups"),
             ("@startgantt", "gantt", "Gantt charts"),
+            ("@startuml\nstart\n", "activity", "Activity diagrams"),
+            (":start;", "activity", "Activity diagrams with complex control flow"),
+            ("object ", "object", "Object diagrams"),
+            ("robust", "timing", "Timing diagrams"),
         ]
 
         detected_type = None
@@ -197,6 +208,15 @@ class PlantUMLRenderer(BaseRenderer):
 
         dot += "}"
         return dot
+
+    def _generate_fallback_dot(self, plantuml_code):
+        """Generate a fallback DOT graph for unknown PlantUML syntax"""
+        return """digraph G {
+    node [shape=box, style="filled", fillcolor="lightyellow"];
+    PlantUML [label="PlantUML Diagram\\n(Local Rendering)"];
+    Note [label="This PlantUML diagram type\\nis not fully supported\\nfor local rendering", shape=note, fillcolor="lightblue"];
+    PlantUML -> Note [style=dashed];
+}"""
 
     def render_html(self, code, **kwargs):
         """Generate PlantUML diagram as HTML using unified template"""

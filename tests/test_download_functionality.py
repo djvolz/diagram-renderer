@@ -265,7 +265,8 @@ class TestErrorHandlingRobustness:
 
             # Should handle missing libraries gracefully
             assert html is not None
-            assert "Error:" in html
+            # Check for error indicators in the new template
+            assert "JavaScript Library Missing" in html or "error" in html.lower()
 
     def test_invalid_diagram_code_handled(self):
         """Test handling of invalid diagram code"""

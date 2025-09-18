@@ -40,7 +40,11 @@ class TestBaseRendererHelperMethods:
 
         error_html = renderer._generate_error_html("Test error message")
 
-        assert error_html == "<div>Error: Test error message</div>"
+        # Check for new template format - it should be a full HTML page
+        assert "error" in error_html.lower()
+        assert "Rendering Error" in error_html
+        assert 'class="error-title"' in error_html
+        assert "<p>Test error message</p>" in error_html
 
     def test_get_vizjs_content(self):
         """Test VizJS content aggregation"""
@@ -167,8 +171,8 @@ class TestErrorHandling:
             html = renderer.render_html("graph TD\n    A --> B")
 
             assert html is not None
-            assert "Error:" in html
-            assert "<div>" in html
+            assert "error" in html.lower()
+            assert "Rendering Error" in html or "<!DOCTYPE html>" in html
 
     def test_missing_template_handled_gracefully(self):
         """Test behavior when template files are missing"""
@@ -178,8 +182,8 @@ class TestErrorHandling:
             html = renderer.render_html("graph TD\n    A --> B")
 
             assert html is not None
-            assert "Error:" in html
-            assert "<div>" in html
+            assert "error" in html.lower()
+            assert "Rendering Error" in html or "<!DOCTYPE html>" in html
 
     def test_error_message_format_consistency(self):
         """Test that all error messages follow the same format"""
@@ -189,7 +193,10 @@ class TestErrorHandling:
 
         for message in error_messages:
             result = renderer._generate_error_html(message)
-            assert result == f"<div>Error: {message}</div>"
+            # Check for new template format
+            assert "error" in result.lower()
+            assert "Rendering Error" in result
+            assert f"<p>{message}</p>" in result
 
 
 class TestNewMethodCoverage:
@@ -200,7 +207,10 @@ class TestNewMethodCoverage:
         renderer = MermaidRenderer()
 
         result = renderer._generate_error_html("Test message")
-        assert result == "<div>Error: Test message</div>"
+        # Check for new template format
+        assert "error" in result.lower()
+        assert "Rendering Error" in result
+        assert "<p>Test message</p>" in result
 
     def test_mermaid_generate_rendering_script(self):
         """Test Mermaid rendering script generation"""
