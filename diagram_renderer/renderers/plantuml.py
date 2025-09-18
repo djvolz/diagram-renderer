@@ -206,8 +206,17 @@ class PlantUMLRenderer(BaseRenderer):
 
         for line in lines:
             line = line.strip()
+
+            # Skip PlantUML directives
+            if line.startswith("@") or line == "}":
+                continue
+
+            # Handle rectangle container (just skip the declaration)
+            if line.startswith("rectangle "):
+                continue
+
+            # Parse actor definition
             if line.startswith("actor "):
-                # Parse actor definition
                 parts = line.replace("actor ", "").strip()
                 if " as " in parts:
                     # actor "Payment System" as PS
@@ -217,8 +226,9 @@ class PlantUMLRenderer(BaseRenderer):
                     # actor Customer
                     name = parts.strip('"').strip()
                     actors.append(name)
+
+            # Parse use case definition
             elif line.startswith("usecase "):
-                # Parse use case definition
                 parts = line.replace("usecase ", "").strip()
                 if " as " in parts:
                     # usecase "Browse Products" as UC1
@@ -229,21 +239,48 @@ class PlantUMLRenderer(BaseRenderer):
                     # usecase "Browse Products"
                     label = parts.strip('"')
                     use_cases.append((label, label))
-            elif "-->" in line or ".>" in line or "->" in line:
+
+            # Parse connections and inline use cases
+            elif "-->" in line or ".>" in line or "->" in line or "--" in line:
+                # Extract inline use cases with parentheses
+                import re
+
+                inline_use_case_pattern = r"\(([^)]+)\)"
+                inline_use_cases = re.findall(inline_use_case_pattern, line)
+
+                # Add inline use cases to the list if not already present
+                for uc_name in inline_use_cases:
+                    if not any(uc_name == uc[0] or uc_name == uc[1] for uc in use_cases):
+                        use_cases.append((uc_name, uc_name))
+
                 # Parse connections
+                arrow_type = "normal"
+                parts = []
+
                 if "-->" in line:
                     parts = line.split("-->")
                     arrow_type = "normal"
                 elif ".>" in line:
                     parts = line.split(".>")
                     arrow_type = "dashed"
-                else:
+                elif "->" in line:
                     parts = line.split("->")
+                    arrow_type = "normal"
+                elif "--" in line:
+                    # Handle simple association like: Customer -- (Browse Products)
+                    parts = line.split("--")
                     arrow_type = "normal"
 
                 if len(parts) == 2:
                     from_node = parts[0].strip()
                     to_part = parts[1].strip()
+
+                    # Handle parentheses in use case names
+                    # Convert (Use Case Name) to just Use Case Name
+                    if from_node.startswith("(") and from_node.endswith(")"):
+                        from_node = from_node[1:-1].strip()
+                    if to_part.startswith("(") and to_part.endswith(")"):
+                        to_part = to_part[1:-1].strip()
 
                     # Check for labels like ": extends"
                     if ":" in to_part:
