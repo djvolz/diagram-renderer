@@ -192,6 +192,25 @@ def get_mermaid_examples():
     Content Marketing: [0.3, 0.8]
     Radio: [0.6, 0.4]
     SEO: [0.2, 0.9]""",
+        "Sankey Diagram": """%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ff0000'}}}%%
+sankey-beta
+
+%% Energy flow example
+Coal,Electricity,30
+Natural Gas,Electricity,35
+Oil,Transportation,25
+Renewable,Electricity,20
+Electricity,Residential,25
+Electricity,Commercial,20
+Electricity,Industrial,45
+Transportation,Personal,15
+Transportation,Freight,10""",
+        "XY Chart": """xychart-beta
+    title "Sales Revenue Comparison (Q1 2024)"
+    x-axis [Jan, Feb, Mar, Apr, May, Jun]
+    y-axis "Revenue (K$)" 0 --> 100
+    line [23, 45, 56, 78, 67, 89]
+    bar [15, 25, 35, 45, 55, 65]""",
         "Timeline": """timeline
     title Web Development History
 
