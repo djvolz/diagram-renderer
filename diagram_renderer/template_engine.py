@@ -127,7 +127,7 @@ class TemplateEngine:
             help_section = """
         <div class="help-section">
             <h2>Need Help?</h2>
-            <p>Check the documentation at <a href="https://github.com/dannyl1u/diagram-render">github.com/dannyl1u/diagram-render</a></p>
+            <p>Check the documentation at <a href="https://github.com/djvolz/diagram-render">github.com/djvolz/diagram-render</a></p>
         </div>"""
 
         return f"""<!DOCTYPE html>
