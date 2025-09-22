@@ -17,3 +17,10 @@ todo.md
 !diagram_renderer/renderers/templates/*.html
 diagram.*
 mermaid-test.*
+
+# Visual regression generated files
+examples/demo_*.html
+examples/plantuml_*.html
+examples/graphviz_*.html
+tests/visual/artifacts/
+tests/visual/baselines/*.png
