@@ -41,6 +41,9 @@ def generate_baselines():
     examples_dir = Path(__file__).parent.parent.parent / "examples"
     baselines_dir = Path(__file__).parent / "baselines"
 
+    # Ensure baselines directory exists
+    baselines_dir.mkdir(exist_ok=True, parents=True)
+
     print("🎯 Generating Visual Regression Baselines")
     print("=" * 50)
 
@@ -64,7 +67,7 @@ def generate_baselines():
     ]:
         examples = get_examples_func()
         type_dir = examples_dir / diagram_type
-        type_dir.mkdir(exist_ok=True)
+        type_dir.mkdir(exist_ok=True, parents=True)
 
         for filename, diagram_info in examples.items():
             try:

@@ -1,37 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `diagram_renderer/`: Core library, CLI (`cli.py`), renderers (`renderers/` with `mermaid.py`, `plantuml.py`, `graphviz.py`), templates and static JS assets.
-- `examples/`: Dashboard (`dashboard.py`), FastAPI app (`webapp.py`), MCP server, CLI demos.
-- `tests/`: Pytest suite organized by feature; `pytest.ini` and `pyproject.toml` define markers/options.
-- `scripts/`: Utility scripts (e.g., `update_version.py`).
+`diagram_renderer/` hosts the core library, the CLI entrypoint (`cli.py`), and renderer backends in `renderers/` (`mermaid.py`, `plantuml.py`, `graphviz.py`) alongside HTML templates and bundled JS. Examples for dashboards, the FastAPI web app, the MCP server, and CLI demos live under `examples/`. Feature-focused tests sit in `tests/`, guided by `pytest.ini` and `pyproject.toml`, while project automation scripts (such as `update_version.py`) are grouped in `scripts/`.
 
 ## Build, Test, and Development Commands
-- Install deps: `uv sync --extra all` (or selective extras: `dashboard`, `webapp`, `mcp`).
-- Lint (fix): `uv run ruff check . --fix` and Format: `uv run ruff format .`.
-- Type check: `uv run mypy diagram_renderer`.
-- Run tests: `uv run pytest -v` (markers: `-m 'not slow'`). Coverage: `uv run pytest --cov=diagram_renderer`.
-- Pre-commit: `uv run pre-commit install` then `uv run pre-commit run -a`.
-- Build package: `uv build`.
+Install dependencies with `uv sync --extra all`, or target extras like `uv sync --extra dashboard`. Format and lint via `uv run ruff format .` and `uv run ruff check . --fix`. Static typing is enforced with `uv run mypy diagram_renderer`. Run unit tests using `uv run pytest -v`, switch markers with `-m 'not slow'`, and capture coverage through `uv run pytest --cov=diagram_renderer`. Generate distributable artifacts with `uv build`, and wire pre-commit hooks using `uv run pre-commit install` followed by `uv run pre-commit run -a`.
 
 ## Coding Style & Naming Conventions
-- Python 3.10+; 4-space indentation; max line length 100 (Ruff config).
-- Names: modules/functions `snake_case`, classes `PascalCase`, constants `UPPER_SNAKE_CASE`.
-- Imports: group stdlib/third-party/local; prefer explicit imports; avoid wildcard.
-- Tools: Ruff for lint/format; MyPy with `disallow_untyped_defs=true` (add/propagate type hints).
+Target Python 3.10+, four-space indentation, and Ruff's 100-character line limit. Prefer explicit imports ordered stdlib / third-party / local, avoid wildcards, and keep public APIs type-annotated—`pyproject.toml` enables `disallow_untyped_defs`. Follow naming conventions: `snake_case` for modules and functions, `PascalCase` for classes, and `UPPER_SNAKE_CASE` for constants.
 
 ## Testing Guidelines
-- Framework: Pytest; tests live in `tests/`, files `test_*.py`.
-- Use markers (`@pytest.mark.integration`, `@pytest.mark.slow`) and keep unit tests fast/deterministic.
-- Add tests with clear Given/When/Then structure; prefer fixture reuse from `tests/conftest.py`.
-- Validate HTML output with string/DOM assertions and sample assets under `renderers/static/`.
+Write Pytest suites in `tests/test_*.py`, reusing fixtures from `tests/conftest.py` to keep coverage concise. Mark integration or slow scenarios with `@pytest.mark.integration` and `@pytest.mark.slow`, letting CI skip expensive paths by default. Validate renderer output with deterministic HTML or asset assertions from `diagram_renderer/renderers/static/`. Aim for meaningful coverage metrics (`uv run pytest --cov=diagram_renderer`) before submitting changes.
 
 ## Commit & Pull Request Guidelines
-- Commits: follow Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `style:`). Example: `fix(tests): update UI icon assertion`.
-- PRs: concise title/description, link issues, list changes, include before/after screenshots or sample HTML for UI changes, and test plan (`pytest -v`, markers used).
-- Passing CI, lint, type checks required; keep PRs focused and small.
+Use Conventional Commits such as `feat(renderer): add svg sanitizer` to clarify scope. Each PR should summarize changes, link any issues, and attach screenshots or sample HTML for UI-affecting work. Confirm lint, typing, and tests have been run (report commands in the PR description), keep diffs focused, and respond promptly to review feedback.
 
 ## Security & Configuration Tips
-- Assets are self-hosted; avoid adding CDN dependencies.
-- Keep large static files under `diagram_renderer/renderers/static/` and reference relatively.
-- Prefer offline-friendly examples; avoid network calls in tests.
+Ship assets from the repository—do not add CDN dependencies or remote script tags. Large binaries belong in `diagram_renderer/renderers/static/` and should be referenced relatively so offline demos remain functional. Avoid network calls in automated tests, and review dependency updates for licensing and supply-chain risk before merging.

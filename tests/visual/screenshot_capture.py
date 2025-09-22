@@ -147,7 +147,7 @@ class DiagramScreenshotCapture:
         for diagram_type, examples in examples_by_type.items():
             print(f"\n🎯 Capturing {diagram_type.upper()} examples...")
             type_dir = output_dir / diagram_type
-            type_dir.mkdir(exist_ok=True)
+            type_dir.mkdir(exist_ok=True, parents=True)
 
             type_results = {"success": [], "failed": []}
 
