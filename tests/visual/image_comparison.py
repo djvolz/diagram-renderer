@@ -72,10 +72,12 @@ class ImageComparator:
                 self._generate_visual_diff(baseline, current, diff_array, diff_output_path)
 
             return {
-                "similarity": similarity,
-                "different_pixels": different_pixels,
-                "total_pixels": total_pixels,
-                "passed": similarity >= self.similarity_threshold,
+                "similarity": float(similarity),  # Convert numpy float to Python float
+                "different_pixels": int(different_pixels),  # Convert numpy int64 to Python int
+                "total_pixels": int(total_pixels),  # Convert numpy int64 to Python int
+                "passed": bool(
+                    similarity >= self.similarity_threshold
+                ),  # Convert numpy bool to Python bool
                 "baseline_size": baseline.size,
                 "current_size": current.size,
             }

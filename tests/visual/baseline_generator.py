@@ -44,15 +44,41 @@ def generate_baselines():
     print("🎯 Generating Visual Regression Baselines")
     print("=" * 50)
 
-    # First, regenerate all examples to ensure they're current
-    print("🔄 Regenerating all examples to ensure current...")
-    try:
-        from examples.regenerate_all_diagrams import regenerate_all_examples
+    # Generate HTML files for all examples
+    print("🔄 Generating HTML files for examples...")
+    from diagram_renderer import DiagramRenderer
 
-        all_results = regenerate_all_examples()
-    except Exception as e:
-        print(f"❌ Error regenerating examples: {e}")
-        return False
+    renderer = DiagramRenderer()
+
+    # Track which examples work
+    all_results = {
+        "mermaid": {"success": []},
+        "plantuml": {"success": []},
+        "graphviz": {"success": []},
+    }
+
+    for diagram_type, get_examples_func in [
+        ("mermaid", get_mermaid_examples),
+        ("plantuml", get_plantuml_examples),
+        ("graphviz", get_graphviz_examples),
+    ]:
+        examples = get_examples_func()
+        type_dir = examples_dir / diagram_type
+        type_dir.mkdir(exist_ok=True)
+
+        for filename, diagram_info in examples.items():
+            try:
+                # Generate HTML
+                html_content = renderer.render_diagram_auto(diagram_info["code"])
+                if html_content:
+                    # Save HTML file
+                    html_path = examples_dir / filename
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    all_results[diagram_type]["success"].append(filename)
+                    print(f"  ✅ Generated {filename}")
+            except Exception as e:
+                print(f"  ❌ Failed to generate {filename}: {e}")
 
     # Get working examples only
     examples_by_type = {
@@ -65,8 +91,8 @@ def generate_baselines():
     for diagram_type, examples in examples_by_type.items():
         print(f"  {diagram_type}: {len(examples)} working examples")
 
-    # Capture screenshots
-    capturer = DiagramScreenshotCapture()
+    # Capture screenshots (use port 8003 to avoid conflicts)
+    capturer = DiagramScreenshotCapture(server_port=8003)
 
     if not capturer.start_local_server(examples_dir):
         print("❌ Failed to start local server")

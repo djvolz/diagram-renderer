@@ -19,14 +19,19 @@ from examples.diagram_generators import (
     get_plantuml_examples,
 )
 
-from .image_comparison import ImageComparator
-from .screenshot_capture import DiagramScreenshotCapture
+try:
+    from .image_comparison import ImageComparator
+    from .screenshot_capture import DiagramScreenshotCapture
+except ImportError:
+    # When running directly (not as a module)
+    from image_comparison import ImageComparator
+    from screenshot_capture import DiagramScreenshotCapture
 
 
 class VisualRegressionTester:
     """Main visual regression testing orchestrator"""
 
-    def __init__(self, similarity_threshold: float = 0.95, server_port: int = 8000):
+    def __init__(self, similarity_threshold: float = 0.95, server_port: int = 8004):
         self.similarity_threshold = similarity_threshold
         self.server_port = server_port
         self.visual_dir = Path(__file__).parent
@@ -58,24 +63,44 @@ class VisualRegressionTester:
         print("🎯 Running Visual Regression Tests")
         print("=" * 40)
 
-        # Step 1: Regenerate examples if requested
-        example_results = None
-        if regenerate_examples:
-            print("🔄 Regenerating all diagram examples...")
-            try:
-                from examples.regenerate_all_diagrams import regenerate_all_examples
-
-                example_results = regenerate_all_examples()
-            except Exception as e:
-                print(f"❌ Failed to regenerate examples: {e}")
-                return {"error": "Failed to regenerate examples"}
-
-        # Step 2: Get example definitions
+        # Step 1: Get example definitions
         examples_by_type = {
             "mermaid": get_mermaid_examples(),
             "plantuml": get_plantuml_examples(),
             "graphviz": get_graphviz_examples(),
         }
+
+        # Step 2: Regenerate examples if requested
+        example_results = None
+        if regenerate_examples:
+            print("🔄 Generating HTML files for diagram examples...")
+            try:
+                from diagram_renderer import DiagramRenderer
+
+                renderer = DiagramRenderer()
+                examples_dir = Path(__file__).parent.parent.parent / "examples"
+
+                example_results = {
+                    "mermaid": {"success": []},
+                    "plantuml": {"success": []},
+                    "graphviz": {"success": []},
+                }
+
+                # Generate HTML files
+                for diagram_type, examples in examples_by_type.items():
+                    for filename, diagram_info in examples.items():
+                        try:
+                            html_content = renderer.render_diagram_auto(diagram_info["code"])
+                            if html_content:
+                                html_path = examples_dir / filename
+                                with open(html_path, "w", encoding="utf-8") as f:
+                                    f.write(html_content)
+                                example_results[diagram_type]["success"].append(filename)
+                        except Exception:
+                            pass
+            except Exception as e:
+                print(f"❌ Failed to generate examples: {e}")
+                return {"error": "Failed to generate examples"}
 
         # Step 3: Capture current screenshots if requested
         if capture_new_screenshots:

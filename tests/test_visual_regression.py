@@ -25,7 +25,6 @@ class TestVisualRegression:
         return any(baselines_dir.glob("*/*.png"))
 
     @pytest.mark.visual
-    @pytest.mark.skip(reason="Visual regression needs update for new dashboard structure")
     def test_visual_regression_mermaid(self, visual_tester, baselines_exist):
         """Test visual regression for Mermaid diagrams"""
         if not baselines_exist:
@@ -44,7 +43,6 @@ class TestVisualRegression:
 
     @pytest.mark.visual
     @pytest.mark.integration
-    @pytest.mark.skip(reason="Visual regression needs update for new dashboard structure")
     def test_visual_regression_full_suite(self, visual_tester, baselines_exist):
         """Test complete visual regression suite for all diagram types"""
         if not baselines_exist:
@@ -79,10 +77,14 @@ class TestVisualRegression:
     @pytest.mark.visual
     def test_baseline_coverage(self):
         """Test that we have baseline images for all working examples"""
-        # Note: regenerate_all_diagrams was replaced by dashboard.py
-        # This test needs to be rewritten to work with the new structure
-        pytest.skip("Test needs rewrite for new dashboard structure")
-        return
+        # Check that baseline directory exists and contains images
+        baselines_dir = Path(__file__).parent / "visual" / "baselines"
 
-        # Original test logic removed - needs rewrite for new structure
-        pass
+        if not baselines_dir.exists():
+            pytest.skip("No baselines directory")
+
+        # Count baseline images
+        baseline_count = len(list(baselines_dir.glob("*/*.png")))
+
+        # We should have at least some baselines
+        assert baseline_count > 20, f"Expected at least 20 baseline images, found {baseline_count}"
