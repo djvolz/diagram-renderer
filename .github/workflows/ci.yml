@@ -78,9 +78,10 @@ jobs:
         uv run python examples/cli.py quick "graph TD; A-->B" -o test-output.html
         test -f test-output.html
 
-    - name: Test examples
+    - name: Test dashboard imports
       run: |
-        uv run python examples/unified_demo.py
+        # Test that dashboard can be imported (won't run due to streamlit)
+        uv run python -c "import sys; sys.path.insert(0, 'examples'); import dashboard; print('✅ Dashboard imports successfully')"
 
   visual-regression:
     name: Visual Regression Tests
