@@ -23,4 +23,4 @@ examples/demo_*.html
 examples/plantuml_*.html
 examples/graphviz_*.html
 tests/visual/artifacts/
-tests/visual/baselines/*.png
+# Note: baseline images are intentionally tracked as ground truth
