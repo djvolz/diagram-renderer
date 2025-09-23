@@ -36,16 +36,11 @@ EXTERNAL_DIAGRAM_TYPES = [
     ),
     ExternalDiagramType(
         diagram_type="block-beta",
-        plugin_file="Full Mermaid support for block diagrams",
+        plugin_file="mermaid-block.min.js",  # Using a proper plugin filename
         description="Block diagrams (beta) may require a newer Mermaid version with full block diagram support",
         detection_patterns=["block-beta"],
     ),
-    ExternalDiagramType(
-        diagram_type="gitgraph",
-        plugin_file="Full Mermaid support for git graphs",
-        description="Git graph diagrams may require a newer Mermaid version or additional configuration",
-        detection_patterns=["gitgraph"],
-    ),
+    # Note: gitgraph removed from external types as it's supported by our current Mermaid bundle
 ]
 
 

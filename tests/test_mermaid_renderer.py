@@ -18,6 +18,7 @@ class TestMermaidRenderer:
         """Test detection with strong Mermaid indicators"""
         test_cases = [
             "graph TD\n  A --> B",
+            "graph TB\n  A --> B",  # Test for graph TB specifically (regression test)
             "flowchart LR\n  Start --> End",
             "sequenceDiagram\n  A->>B: Hello",
             "classDiagram\n  class User",
@@ -26,13 +27,14 @@ class TestMermaidRenderer:
             "journey\n  title My Journey",
             "gantt\n  title Project Timeline",
             "pie title Pie Chart",
-            "gitgraph:",
+            "gitgraph:",  # Git graphs should be detected
+            "gitgraph\n  commit\n  branch develop",  # More complex git graph
             "requirement test",
             "mindmap",
         ]
 
         for code in test_cases:
-            assert mermaid_renderer.detect_diagram_type(code) is True
+            assert mermaid_renderer.detect_diagram_type(code) is True, f"Failed to detect: {code}"
 
     def test_detect_diagram_type_participant_cases(self, mermaid_renderer):
         """Test detection with participant/actor indicators"""
@@ -189,6 +191,30 @@ class TestMermaidDebugCases:
         assert html_output is not None
         assert "gantt" in html_output.lower()
         assert "mermaid" in html_output.lower()
+
+    @pytest.mark.integration
+    def test_git_graph_rendering(self, mermaid_renderer):
+        """Test that git graphs are properly rendered (regression test)"""
+        git_graph_code = """gitgraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit"""
+
+        # Test detection
+        assert mermaid_renderer.detect_diagram_type(git_graph_code) is True
+
+        # Test rendering produces valid HTML (not an error page)
+        html = mermaid_renderer.render_html(git_graph_code)
+        assert "mermaid.initialize" in html
+        assert "gitgraph" in html.lower()
+        # Should NOT show the "Unsupported Diagram Type" error page
+        assert "Unsupported Diagram Type" not in html
+        assert "not fully supported" not in html.lower()
 
     @pytest.mark.integration
     def test_block_diagram_external_handling(self, mermaid_renderer):

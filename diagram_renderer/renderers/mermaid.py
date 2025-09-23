@@ -28,6 +28,7 @@ class MermaidRenderer(BaseRenderer):
         # Strong Mermaid indicators (definitive) - check these first
         strong_mermaid_indicators = [
             "graph td",
+            "graph tb",  # Top-bottom is a common flowchart orientation
             "graph lr",
             "graph bt",
             "graph rl",  # Mermaid graph with direction
@@ -45,6 +46,7 @@ class MermaidRenderer(BaseRenderer):
             "quadrantchart",
             "requirement",
             "requirementdiagram",
+            "gitgraph",  # Git graphs are supported in our Mermaid bundle
         ]
 
         # Get external diagram indicators from configuration
@@ -126,8 +128,9 @@ class MermaidRenderer(BaseRenderer):
                 # Block diagrams are not fully supported in current Mermaid bundle
                 missing_plugins.append(req)
             elif req["type"] == "gitgraph":
-                # Git graphs are not fully supported in current Mermaid bundle
-                missing_plugins.append(req)
+                # Git graphs are supported in our current Mermaid bundle
+                # No need to add to missing_plugins
+                pass
             # Requirement diagrams should work with current Mermaid bundle
 
         if missing_plugins:
