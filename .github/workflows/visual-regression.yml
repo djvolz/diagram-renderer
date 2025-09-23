@@ -38,37 +38,20 @@ jobs:
       run: |
         uv run playwright install chromium
 
-    - name: Check for baseline images
-      id: check-baselines
+    - name: Verify baseline images exist
       run: |
-        if [ -d "tests/visual/baselines" ] && [ "$(find tests/visual/baselines -name '*.png' | wc -l)" -gt 0 ]; then
-          echo "baselines_exist=true" >> $GITHUB_OUTPUT
-          echo "Found $(find tests/visual/baselines -name '*.png' | wc -l) baseline images"
-        else
-          echo "baselines_exist=false" >> $GITHUB_OUTPUT
-          echo "No baseline images found"
+        baseline_count=$(find tests/visual/baselines -name '*.png' | wc -l)
+        echo "🔍 Found $baseline_count baseline images"
+        if [ "$baseline_count" -lt 30 ]; then
+          echo "❌ Error: Expected at least 30 baseline images, found $baseline_count"
+          echo "Baseline images should be committed to the repository as ground truth."
+          exit 1
         fi
-
-    - name: Generate baseline images (if none exist)
-      if: steps.check-baselines.outputs.baselines_exist == 'false'
-      run: |
-        echo "🎯 Generating baseline images (first time setup)"
-        uv run python tests/visual/baseline_generator.py
-
-        # For now, just generate baselines without committing
-        # TODO: Implement proper baseline management strategy
-        echo "✅ Generated baseline images for testing"
 
     - name: Run visual regression tests
-      # Always run tests, whether baselines existed or were just generated
       run: |
-        echo "🔍 Running visual regression tests..."
-        if [ -d "tests/visual/baselines" ] && [ "$(find tests/visual/baselines -name '*.png' | wc -l)" -gt 0 ]; then
-          uv run python tests/visual/visual_test_runner.py --threshold 0.95
-        else
-          echo "⚠️ No baseline images found, skipping visual tests"
-          echo "To generate baselines: python tests/visual/baseline_generator.py"
-        fi
+        echo "🔍 Running visual regression tests against ground truth baselines..."
+        uv run python tests/visual/visual_test_runner.py --threshold 0.95
 
     - name: Upload visual diff artifacts on failure
       if: failure()
