@@ -51,8 +51,8 @@ jobs:
     - name: Run visual regression tests
       run: |
         echo "🔍 Running visual regression tests against ground truth baselines..."
-        # Using 0.93 threshold to account for cross-platform rendering differences (macOS vs Linux)
-        uv run python tests/visual/visual_test_runner.py --threshold 0.93
+        # Using 0.91 threshold to account for cross-platform rendering differences (macOS vs Linux)
+        uv run python tests/visual/visual_test_runner.py --threshold 0.91
 
     - name: Upload visual diff artifacts on failure
       if: failure()

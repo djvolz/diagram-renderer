@@ -82,20 +82,21 @@ uv run python examples/cli.py --help
 
 ## Supported Diagram Types
 
+The visual-regression baselines cover the following diagram families:
+
 ### Mermaid
-- Flowcharts, Sequence diagrams, Class diagrams
-- State diagrams, ER diagrams, User journey
-- Gantt charts, Pie charts, and more
+- Flowchart, Sequence, Class, State, and ER diagrams
+- User Journey, Timeline, Requirement, and C4 Context diagrams
+- Quadrant Charts, Pie Charts, and Gantt Charts
+- Git Graphs plus beta features: XY Chart, Sankey, and Block diagrams
 
 ### PlantUML
-- UML diagrams (Class, Sequence, Use Case, Activity)
-- Network diagrams, Mind maps
-- Gantt charts, Work breakdown structure
+- Sequence, Class, Use Case, Component, and State diagrams
+- Deployment, Object, and Network diagrams
 
-### Graphviz
-- DOT language diagrams
-- Directed and undirected graphs
-- Network diagrams, organizational charts
+### Graphviz (DOT)
+- Directed and Undirected graphs, Flowcharts, and Dependency graphs
+- Organizational Charts, State Machines, Network Diagrams, and Cluster diagrams
 
 ## Configuration
 
@@ -140,7 +141,7 @@ flowchart LR
 
 **Output:** The generated HTML includes:
 - 🔍 **Interactive zoom and pan controls**
-- 📱 **Responsive design** 
+- 📱 **Responsive design**
 - 🖼 **PNG export functionality**
 - 🎨 **Automatic diagram type detection**
 - 🔒 **Self-contained** - All JS libraries included locally (no CDN dependencies)
