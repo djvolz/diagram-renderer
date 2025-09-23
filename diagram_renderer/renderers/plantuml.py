@@ -515,8 +515,8 @@ class PlantUMLRenderer(BaseRenderer):
                 missing_plugins = [
                     {
                         "type": f"plantuml-{diagram_type}",
-                        "plugin_needed": "Full PlantUML engine support",
-                        "description": f"{description} are not supported by the VizJS-based PlantUML renderer",
+                        "plugin_needed": "plantuml-server.jar",  # Use a proper filename for consistency
+                        "description": f"{description} are not supported by the VizJS-based PlantUML renderer. Full PlantUML Java server would be required for these features",
                     }
                 ]
 
