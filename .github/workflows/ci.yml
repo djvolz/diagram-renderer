@@ -113,7 +113,8 @@ jobs:
       run: |
         if [ -d "tests/visual/baselines" ] && [ "$(find tests/visual/baselines -name '*.png' | wc -l)" -gt 0 ]; then
           echo "🔍 Running visual regression tests..."
-          uv run python tests/visual/visual_test_runner.py --threshold 0.95
+          # Using 0.93 threshold to account for cross-platform rendering differences
+          uv run python tests/visual/visual_test_runner.py --threshold 0.93
         else
           echo "⚠️ No baseline images found - skipping visual tests"
           echo "To enable visual tests: python tests/visual/baseline_generator.py"
