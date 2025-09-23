@@ -364,7 +364,7 @@ gitgraph
     commit id: "Fix critical bug"
     checkout main
     merge hotfix
-    commit id: "Release v1.0.1\"""",
-            "expected_status": "external",
+    commit id: "Release v1.0.1""",
+            "expected_status": "external",  # Git graphs require Mermaid 8.0+ (we have 0.16.11)
         },
     }

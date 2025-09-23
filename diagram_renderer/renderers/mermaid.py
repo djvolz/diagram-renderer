@@ -19,6 +19,14 @@ class MermaidRenderer(BaseRenderer):
         """Detect if code is Mermaid"""
         code_lower = code.strip().lower()
 
+        # Remove Mermaid init configuration to check actual diagram type
+        # %%{init: ...}%% can appear at the beginning
+        if code_lower.startswith("%%{init:") or code_lower.startswith("%%{"):
+            # Find the end of the init block and check what comes after
+            init_end = code_lower.find("}%%")
+            if init_end != -1:
+                code_lower = code_lower[init_end + 3 :].strip()
+
         # Strong PlantUML indicators - avoid false positives
         if code_lower.startswith("@startuml") or "@startuml" in code_lower:
             return False
@@ -46,7 +54,6 @@ class MermaidRenderer(BaseRenderer):
             "quadrantchart",
             "requirement",
             "requirementdiagram",
-            "gitgraph",  # Git graphs are supported in our Mermaid bundle
         ]
 
         # Get external diagram indicators from configuration
@@ -128,9 +135,8 @@ class MermaidRenderer(BaseRenderer):
                 # Block diagrams are not fully supported in current Mermaid bundle
                 missing_plugins.append(req)
             elif req["type"] == "gitgraph":
-                # Git graphs are supported in our current Mermaid bundle
-                # No need to add to missing_plugins
-                pass
+                # Git graphs require Mermaid 8.0+ (we have 0.16.11)
+                missing_plugins.append(req)
             # Requirement diagrams should work with current Mermaid bundle
 
         if missing_plugins:
