@@ -16,7 +16,10 @@ def generate_unsupported_diagram_error_html(
     suggestions = []
     for plugin in missing_plugins:
         suggestions.append(f"{plugin['description']}")
-        suggestions.append(f"Required file: static/js/{plugin['plugin_needed']}")
+
+        plugin_needed = plugin.get("plugin_needed")
+        if plugin_needed:
+            suggestions.append(f"Required file: static/js/{plugin_needed}")
 
     error_message = (
         "This diagram type requires external plugins that are not included "

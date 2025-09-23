@@ -5,14 +5,18 @@ This module centralizes the configuration for external Mermaid diagram types
 that require additional plugins or are not fully supported in the bundled version.
 """
 
-from typing import Any
+from typing import Any, Optional
 
 
 class ExternalDiagramType:
     """Configuration for an external diagram type"""
 
     def __init__(
-        self, diagram_type: str, plugin_file: str, description: str, detection_patterns: list[str]
+        self,
+        diagram_type: str,
+        plugin_file: Optional[str],
+        description: str,
+        detection_patterns: list[str],
     ):
         self.diagram_type = diagram_type
         self.plugin_file = plugin_file
@@ -42,7 +46,7 @@ EXTERNAL_DIAGRAM_TYPES = [
     ),
     ExternalDiagramType(
         diagram_type="gitgraph",
-        plugin_file="mermaid-gitgraph.min.js",
+        plugin_file=None,
         description="Git graph diagrams require Mermaid version 8.0+ (we have 0.16.11)",
         detection_patterns=["gitgraph"],
     ),

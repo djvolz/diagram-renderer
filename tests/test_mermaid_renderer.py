@@ -213,6 +213,8 @@ class TestMermaidDebugCases:
         assert "diagram-render-status" in html
         # Should mention version requirement
         assert "Mermaid version" in html or "require" in html.lower()
+        # No bogus static asset guidance
+        assert "static/js/mermaid-gitgraph.min.js" not in html
 
     @pytest.mark.integration
     def test_block_diagram_external_handling(self, mermaid_renderer):
