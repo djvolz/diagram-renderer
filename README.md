@@ -82,20 +82,87 @@ uv run python examples/cli.py --help
 
 ## Supported Diagram Types
 
+The visual-regression baselines cover the following diagram families:
+
 ### Mermaid
-- Flowcharts, Sequence diagrams, Class diagrams
-- State diagrams, ER diagrams, User journey
-- Gantt charts, Pie charts, and more
+- Flowchart, Sequence, Class, State, and ER diagrams
+- User Journey, Timeline, Requirement, and C4 Context diagrams
+- Quadrant Charts, Pie Charts, and Gantt Charts
+- Git Graphs plus beta features: XY Chart, Sankey, and Block diagrams
 
 ### PlantUML
-- UML diagrams (Class, Sequence, Use Case, Activity)
-- Network diagrams, Mind maps
-- Gantt charts, Work breakdown structure
+- Sequence, Class, Use Case, Component, and State diagrams
+- Deployment, Object, and Network diagrams
 
-### Graphviz
-- DOT language diagrams
-- Directed and undirected graphs
-- Network diagrams, organizational charts
+### Graphviz (DOT)
+- Directed and Undirected graphs, Flowcharts, and Dependency graphs
+- Organizational Charts, State Machines, Network Diagrams, and Cluster diagrams
+
+## Visual Gallery
+
+Interactive screenshots from our baseline suite are available below. Expand any section to preview the rendered output.
+
+<details>
+  <summary><strong>Mermaid Gallery</strong></summary>
+
+  <p align="center">
+    <img src="tests/visual/baselines/mermaid/demo_flowchart.png" alt="Mermaid Flowchart" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_sequence_diagram.png" alt="Mermaid Sequence Diagram" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_class_diagram.png" alt="Mermaid Class Diagram" width="280" />
+    <br />
+    <img src="tests/visual/baselines/mermaid/demo_state_diagram.png" alt="Mermaid State Diagram" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_entity_relationship_diagram.png" alt="Mermaid ER Diagram" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_user_journey.png" alt="Mermaid User Journey" width="280" />
+    <br />
+    <img src="tests/visual/baselines/mermaid/demo_timeline.png" alt="Mermaid Timeline" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_requirement_diagram.png" alt="Mermaid Requirement Diagram" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_c4_context_diagram.png" alt="Mermaid C4 Context Diagram" width="280" />
+    <br />
+    <img src="tests/visual/baselines/mermaid/demo_quadrant_chart.png" alt="Mermaid Quadrant Chart" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_pie_chart.png" alt="Mermaid Pie Chart" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_gantt_chart.png" alt="Mermaid Gantt Chart" width="280" />
+    <br />
+    <img src="tests/visual/baselines/mermaid/demo_git_graph.png" alt="Mermaid Git Graph" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_xy_chart.png" alt="Mermaid XY Chart" width="280" />
+    <img src="tests/visual/baselines/mermaid/demo_sankey_diagram.png" alt="Mermaid Sankey Diagram" width="280" />
+    <br />
+    <img src="tests/visual/baselines/mermaid/demo_block_diagram.png" alt="Mermaid Block Diagram" width="280" />
+  </p>
+</details>
+
+<details>
+  <summary><strong>PlantUML Gallery</strong></summary>
+
+  <p align="center">
+    <img src="tests/visual/baselines/plantuml/plantuml_sequence_diagram.png" alt="PlantUML Sequence Diagram" width="280" />
+    <img src="tests/visual/baselines/plantuml/plantuml_class_diagram.png" alt="PlantUML Class Diagram" width="280" />
+    <img src="tests/visual/baselines/plantuml/plantuml_use_case_diagram.png" alt="PlantUML Use Case Diagram" width="280" />
+    <br />
+    <img src="tests/visual/baselines/plantuml/plantuml_component_diagram.png" alt="PlantUML Component Diagram" width="280" />
+    <img src="tests/visual/baselines/plantuml/plantuml_state_diagram.png" alt="PlantUML State Diagram" width="280" />
+    <img src="tests/visual/baselines/plantuml/plantuml_deployment_diagram.png" alt="PlantUML Deployment Diagram" width="280" />
+    <br />
+    <img src="tests/visual/baselines/plantuml/plantuml_object_diagram.png" alt="PlantUML Object Diagram" width="280" />
+    <img src="tests/visual/baselines/plantuml/plantuml_network_diagram.png" alt="PlantUML Network Diagram" width="280" />
+  </p>
+</details>
+
+<details>
+  <summary><strong>Graphviz Gallery</strong></summary>
+
+  <p align="center">
+    <img src="tests/visual/baselines/graphviz/graphviz_directed_graph.png" alt="Graphviz Directed Graph" width="280" />
+    <img src="tests/visual/baselines/graphviz/graphviz_undirected_graph.png" alt="Graphviz Undirected Graph" width="280" />
+    <img src="tests/visual/baselines/graphviz/graphviz_flowchart.png" alt="Graphviz Flowchart" width="280" />
+    <br />
+    <img src="tests/visual/baselines/graphviz/graphviz_dependency_graph.png" alt="Graphviz Dependency Graph" width="280" />
+    <img src="tests/visual/baselines/graphviz/graphviz_cluster_diagram.png" alt="Graphviz Cluster Diagram" width="280" />
+    <img src="tests/visual/baselines/graphviz/graphviz_state_machine.png" alt="Graphviz State Machine" width="280" />
+    <br />
+    <img src="tests/visual/baselines/graphviz/graphviz_network_diagram.png" alt="Graphviz Network Diagram" width="280" />
+    <img src="tests/visual/baselines/graphviz/graphviz_hierarchy.png" alt="Graphviz Organizational Chart" width="280" />
+  </p>
+</details>
 
 ## Configuration
 
@@ -140,7 +207,7 @@ flowchart LR
 
 **Output:** The generated HTML includes:
 - 🔍 **Interactive zoom and pan controls**
-- 📱 **Responsive design** 
+- 📱 **Responsive design**
 - 🖼 **PNG export functionality**
 - 🎨 **Automatic diagram type detection**
 - 🔒 **Self-contained** - All JS libraries included locally (no CDN dependencies)

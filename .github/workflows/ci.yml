@@ -78,6 +78,52 @@ jobs:
         uv run python examples/cli.py quick "graph TD; A-->B" -o test-output.html
         test -f test-output.html
 
-    - name: Test examples
+    - name: Test dashboard imports
       run: |
-        uv run python examples/unified_demo.py
+        # Test that dashboard can be imported (won't run due to streamlit)
+        uv run python -c "import sys; sys.path.insert(0, 'examples'); import dashboard; print('✅ Dashboard imports successfully')"
+
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install 3.11
+
+    - name: Install dependencies with visual testing
+      run: |
+        uv sync --extra dev
+        uv pip install pillow numpy playwright
+
+    - name: Install Playwright browsers
+      run: uv run playwright install chromium
+
+    - name: Run visual regression tests
+      run: |
+        if [ -d "tests/visual/baselines" ] && [ "$(find tests/visual/baselines -name '*.png' | wc -l)" -gt 0 ]; then
+          echo "🔍 Running visual regression tests..."
+          # Using 0.89 threshold to account for cross-platform rendering differences
+          uv run python tests/visual/visual_test_runner.py --threshold 0.89
+        else
+          echo "⚠️ No baseline images found - skipping visual tests"
+          echo "To enable visual tests: python tests/visual/baseline_generator.py"
+        fi
+
+    - name: Upload visual diff artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-regression-diffs-${{ github.sha }}
+        path: tests/visual/artifacts/
+        retention-days: 14

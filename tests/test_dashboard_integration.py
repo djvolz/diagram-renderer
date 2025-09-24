@@ -23,23 +23,10 @@ class TestDashboardIntegration:
     @pytest.mark.integration
     @pytest.mark.slow
     def test_dashboard_command_help(self):
-        """Test that dashboard command shows help"""
-        from click.testing import CliRunner
-
-        # Add examples directory to path
-        examples_dir = Path(__file__).parent.parent / "examples"
-        sys.path.insert(0, str(examples_dir))
-
-        try:
-            from cli import dashboard
-
-            runner = CliRunner()
-            result = runner.invoke(dashboard, ["--help"])
-
-            assert result.exit_code == 0
-            assert "Launch the interactive Streamlit dashboard" in result.output
-        finally:
-            sys.path.remove(str(examples_dir))
+        """Test that dashboard.py file exists"""
+        # Dashboard is now a standalone file, not a CLI command
+        dashboard_path = Path(__file__).parent.parent / "examples" / "dashboard.py"
+        assert dashboard_path.exists(), "dashboard.py not found in examples directory"
 
     @pytest.mark.integration
     @pytest.mark.slow
@@ -70,13 +57,13 @@ class TestDashboardIntegration:
     @pytest.mark.integration
     @pytest.mark.slow
     def test_streamlit_renderer_imports(self):
-        """Test that streamlit_renderer.py can be imported"""
+        """Test that DiagramRenderer can be used with Streamlit"""
         try:
-            import st_diagram
-            from st_diagram import StreamlitDiagramRenderer
+            # Dashboard now uses DiagramRenderer directly, not a wrapper
+            from diagram_renderer import DiagramRenderer
 
             # Test that we can create an instance
-            renderer = StreamlitDiagramRenderer()
+            renderer = DiagramRenderer()
             assert renderer is not None
             assert hasattr(renderer, "render_diagram_auto")
 
@@ -84,15 +71,13 @@ class TestDashboardIntegration:
             if "streamlit" in str(e).lower():
                 pytest.skip("Streamlit not available")
             else:
-                pytest.fail(f"StreamlitRenderer import failed: {e}")
+                pytest.fail(f"DiagramRenderer import failed: {e}")
 
     @pytest.mark.integration
     @pytest.mark.slow
     def test_dashboard_sample_diagrams(self):
         """Test that dashboard sample diagrams are valid"""
         try:
-            import st_diagram
-
             from diagram_renderer import DiagramRenderer
 
             # Test the sample diagrams used in dashboard
@@ -171,9 +156,19 @@ class TestDashboardStartup:
         """Fixture to start and stop dashboard process"""
         process = None
         try:
-            # Start dashboard in background
+            # Start dashboard in background using streamlit directly
             process = subprocess.Popen(
-                ["uv", "run", "python", "examples/cli.py", "dashboard"],
+                [
+                    "uv",
+                    "run",
+                    "--extra",
+                    "dashboard",
+                    "streamlit",
+                    "run",
+                    "examples/dashboard.py",
+                    "--server.headless",
+                    "true",
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid if hasattr(os, "setsid") else None,

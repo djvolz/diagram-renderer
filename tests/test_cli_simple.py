@@ -13,6 +13,7 @@ from examples.cli import cli
 class TestDashboardCommand:
     """Test dashboard command"""
 
+    @pytest.mark.skip(reason="Dashboard command removed from CLI, now separate script")
     def test_dashboard_help(self):
         """Test dashboard command help"""
         runner = CliRunner()

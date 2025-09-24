@@ -40,7 +40,11 @@ class TestBaseRendererHelperMethods:
 
         error_html = renderer._generate_error_html("Test error message")
 
-        assert error_html == "<div>Error: Test error message</div>"
+        # Check for new template format - it should be a full HTML page
+        assert "error" in error_html.lower()
+        assert "Rendering Error" in error_html
+        assert 'class="error-title"' in error_html
+        assert "<p>Test error message</p>" in error_html
 
     def test_get_vizjs_content(self):
         """Test VizJS content aggregation"""
@@ -167,8 +171,8 @@ class TestErrorHandling:
             html = renderer.render_html("graph TD\n    A --> B")
 
             assert html is not None
-            assert "Error:" in html
-            assert "<div>" in html
+            assert "error" in html.lower()
+            assert "Rendering Error" in html or "<!DOCTYPE html>" in html
 
     def test_missing_template_handled_gracefully(self):
         """Test behavior when template files are missing"""
@@ -178,8 +182,8 @@ class TestErrorHandling:
             html = renderer.render_html("graph TD\n    A --> B")
 
             assert html is not None
-            assert "Error:" in html
-            assert "<div>" in html
+            assert "error" in html.lower()
+            assert "Rendering Error" in html or "<!DOCTYPE html>" in html
 
     def test_error_message_format_consistency(self):
         """Test that all error messages follow the same format"""
@@ -189,7 +193,10 @@ class TestErrorHandling:
 
         for message in error_messages:
             result = renderer._generate_error_html(message)
-            assert result == f"<div>Error: {message}</div>"
+            # Check for new template format
+            assert "error" in result.lower()
+            assert "Rendering Error" in result
+            assert f"<p>{message}</p>" in result
 
 
 class TestNewMethodCoverage:
@@ -200,7 +207,10 @@ class TestNewMethodCoverage:
         renderer = MermaidRenderer()
 
         result = renderer._generate_error_html("Test message")
-        assert result == "<div>Error: Test message</div>"
+        # Check for new template format
+        assert "error" in result.lower()
+        assert "Rendering Error" in result
+        assert "<p>Test message</p>" in result
 
     def test_mermaid_generate_rendering_script(self):
         """Test Mermaid rendering script generation"""
@@ -256,11 +266,12 @@ class TestDemoScriptFunctionality:
     """Test the unified demo script functionality"""
 
     def test_demo_script_exists_and_executable(self):
-        """Test that the demo script exists in the correct location"""
+        """Test that the dashboard script exists in the correct location"""
         import os
         from pathlib import Path
 
-        demo_path = Path(__file__).parent.parent / "examples" / "unified_demo.py"
+        # unified_demo.py was replaced by dashboard.py
+        demo_path = Path(__file__).parent.parent / "examples" / "dashboard.py"
 
         assert demo_path.exists()
         assert os.access(demo_path, os.R_OK)
@@ -274,17 +285,24 @@ class TestDemoScriptFunctionality:
 
             sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-            # Import the demo module
+            # Import the dashboard module
             import importlib.util
 
-            demo_path = Path(__file__).parent.parent / "examples" / "unified_demo.py"
-            spec = importlib.util.spec_from_file_location("unified_demo", str(demo_path))
+            demo_path = Path(__file__).parent.parent / "examples" / "dashboard.py"
+            spec = importlib.util.spec_from_file_location("dashboard", str(demo_path))
             demo_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(demo_module)
 
-            # Should have create_demo function
-            assert hasattr(demo_module, "create_demo")
-            assert callable(demo_module.create_demo)
+            # Dashboard uses streamlit, which we may not have in test env
+            try:
+                spec.loader.exec_module(demo_module)
+                # Should have example functions
+                assert hasattr(demo_module, "get_mermaid_examples")
+                assert callable(demo_module.get_mermaid_examples)
+            except ImportError as e:
+                if "streamlit" in str(e).lower():
+                    pytest.skip("Streamlit not available in test environment")
+                else:
+                    raise
 
         except ImportError as e:
             pytest.skip(f"Demo script import failed: {e}")

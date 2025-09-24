@@ -67,9 +67,10 @@ class TestModernizationFeatures:
         assert "bottom-controls" in content
 
     def test_demo_script_moved_to_examples(self):
-        """Test that demo script was moved to examples directory"""
-        demo_script = Path(__file__).parent.parent / "examples" / "unified_demo.py"
-        assert demo_script.exists(), "unified_demo.py not found in examples directory"
+        """Test that examples directory exists with proper demos"""
+        # unified_demo.py was replaced by consolidated dashboard.py
+        dashboard_script = Path(__file__).parent.parent / "examples" / "dashboard.py"
+        assert dashboard_script.exists(), "dashboard.py not found in examples directory"
 
         # Should not exist in root
         root_demo = Path(__file__).parent.parent / "demo_unified_renderers.py"
@@ -93,7 +94,11 @@ class TestModernizationFeatures:
 
             # Should be able to generate error HTML
             error_html = renderer._generate_error_html("Test")
-            assert error_html == "<div>Error: Test</div>"
+            # Check for new template format - it should be a full HTML page
+            assert "error" in error_html.lower()
+            assert "Rendering Error" in error_html
+            assert 'class="error-title"' in error_html
+            assert "<p>Test</p>" in error_html
 
     def test_modernized_ui_controls(self):
         """Test that modernized UI controls are present"""

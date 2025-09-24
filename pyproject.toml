@@ -55,6 +55,10 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
+    # Visual regression testing
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "playwright>=1.40.0",
 ]
 all = [
     "click>=8.0.0",
@@ -129,5 +133,8 @@ markers = [
 
 [dependency-groups]
 dev = [
+    "numpy>=2.2.6",
+    "pillow>=11.2.1",
+    "playwright>=1.55.0",
     "pre-commit>=4.2.0",
 ]

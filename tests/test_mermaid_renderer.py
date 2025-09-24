@@ -18,6 +18,7 @@ class TestMermaidRenderer:
         """Test detection with strong Mermaid indicators"""
         test_cases = [
             "graph TD\n  A --> B",
+            "graph TB\n  A --> B",  # Test for graph TB specifically (regression test)
             "flowchart LR\n  Start --> End",
             "sequenceDiagram\n  A->>B: Hello",
             "classDiagram\n  class User",
@@ -26,13 +27,12 @@ class TestMermaidRenderer:
             "journey\n  title My Journey",
             "gantt\n  title Project Timeline",
             "pie title Pie Chart",
-            "gitgraph:",
             "requirement test",
             "mindmap",
         ]
 
         for code in test_cases:
-            assert mermaid_renderer.detect_diagram_type(code) is True
+            assert mermaid_renderer.detect_diagram_type(code) is True, f"Failed to detect: {code}"
 
     def test_detect_diagram_type_participant_cases(self, mermaid_renderer):
         """Test detection with participant/actor indicators"""
@@ -101,7 +101,10 @@ class TestMermaidRenderer:
 
         result = mermaid_renderer.render_html(sample_mermaid_flowchart)
 
-        assert "Error: Mermaid.js not available" in result
+        assert (
+            "JavaScript Library Missing" in result
+            or "Mermaid.js library is not available" in result
+        )
 
 
 class TestMermaidRendererIntegration:
@@ -159,3 +162,156 @@ class TestMermaidRendererIntegration:
         assert len(html) > 1000  # Real file should be substantial
         assert "mermaid" in html.lower()
         assert "graph TD" in html
+
+
+class TestMermaidDebugCases:
+    """Test cases derived from debug files"""
+
+    @pytest.mark.integration
+    def test_gantt_chart_rendering(self, mermaid_renderer):
+        """Test gantt chart rendering from debug_gantt.py"""
+        gantt_code = """gantt
+    title Project Development Timeline
+    dateFormat YYYY-MM-DD
+    section Planning
+    Requirements Analysis :done, req, 2024-01-01, 2024-01-07
+    System Design :done, design, 2024-01-05, 2024-01-12
+
+    section Development
+    Backend Development :active, backend, 2024-01-10, 2024-02-15
+    Frontend Development :frontend, 2024-01-20, 2024-02-20"""
+
+        # Test detection
+        assert mermaid_renderer.detect_diagram_type(gantt_code) is True
+
+        # Test rendering produces HTML
+        html_output = mermaid_renderer.render_html(gantt_code)
+        assert html_output is not None
+        assert "gantt" in html_output.lower()
+        assert "mermaid" in html_output.lower()
+
+    @pytest.mark.integration
+    def test_git_graph_external_handling(self, mermaid_renderer):
+        """Test git graphs are marked as requiring newer Mermaid version"""
+        git_graph_code = """gitgraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit"""
+
+        # Test detection - should still detect as Mermaid type
+        assert mermaid_renderer.detect_diagram_type(git_graph_code) is True
+
+        # Test that it shows proper external diagram error (needs newer Mermaid)
+        html = mermaid_renderer.render_html(git_graph_code)
+        assert "Unsupported Diagram Type" in html
+        assert "gitgraph" in html.lower()
+        assert "diagram-render-status" in html
+        # Should mention version requirement
+        assert "Mermaid version" in html or "require" in html.lower()
+        # No bogus static asset guidance
+        assert "static/js/mermaid-gitgraph.min.js" not in html
+
+    @pytest.mark.integration
+    def test_block_diagram_external_handling(self, mermaid_renderer):
+        """Test block diagram external handling from test_block.py"""
+        block_code = """block-beta
+    columns 1
+    A
+    B
+    A --> B"""
+
+        # Test detection
+        assert mermaid_renderer.detect_diagram_type(block_code) is True
+
+        # Test that it shows proper external diagram error
+        html_output = mermaid_renderer.render_html(block_code)
+        assert html_output is not None
+        assert "Unsupported Diagram Type" in html_output
+        assert "block-beta" in html_output
+        assert "diagram-render-status" in html_output
+
+
+class TestPlantUMLRendererCoverage:
+    """Test cases for PlantUML renderer to match Mermaid coverage"""
+
+    @pytest.mark.integration
+    def test_plantuml_sequence_diagram_rendering(self):
+        """Test PlantUML sequence diagram rendering"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        sequence_code = """@startuml
+actor User
+participant System
+User -> System: Login
+System --> User: Success
+@enduml"""
+
+        # Test detection
+        assert renderer.detect_diagram_type(sequence_code) is True
+
+        # Test rendering produces HTML
+        html_output = renderer.render_html(sequence_code)
+        assert html_output is not None
+        assert "VizJS" in html_output
+        assert "User" in html_output
+
+    @pytest.mark.integration
+    def test_plantuml_class_diagram_rendering(self):
+        """Test PlantUML class diagram rendering"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        class_code = """@startuml
+class User {
+  +login()
+}
+class System {
+  +authenticate()
+}
+User --> System
+@enduml"""
+
+        # Test detection
+        assert renderer.detect_diagram_type(class_code) is True
+
+        # Test rendering produces HTML
+        html_output = renderer.render_html(class_code)
+        assert html_output is not None
+        assert "VizJS" in html_output
+        assert "User" in html_output
+
+    @pytest.mark.integration
+    def test_plantuml_unsupported_diagram_error(self):
+        """Test PlantUML unsupported diagram error handling"""
+        from diagram_renderer.renderers.plantuml import PlantUMLRenderer
+
+        renderer = PlantUMLRenderer()
+
+        activity_code = """@startuml
+start
+:Step 1;
+if (condition?) then (yes)
+  :Step 2;
+else (no)
+  :Step 3;
+endif
+stop
+@enduml"""
+
+        # Test detection still works
+        assert renderer.detect_diagram_type(activity_code) is True
+
+        # Test that it shows proper unsupported diagram error
+        html_output = renderer.render_html(activity_code)
+        assert html_output is not None
+        assert "Unsupported Diagram Type" in html_output
+        assert "Activity diagrams" in html_output
+        assert "diagram-render-status" in html_output

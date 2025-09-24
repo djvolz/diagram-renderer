@@ -1,0 +1,66 @@
+name: Visual Regression Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'diagram_renderer/**'
+      - 'examples/**'
+      - 'tests/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'diagram_renderer/**'
+      - 'examples/**'
+      - 'tests/**'
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Install dependencies with visual testing support
+      run: |
+        uv sync --extra dev
+        uv pip install pillow numpy playwright
+
+    - name: Install Playwright browsers
+      run: |
+        uv run playwright install chromium
+
+    - name: Verify baseline images exist
+      run: |
+        baseline_count=$(find tests/visual/baselines -name '*.png' | wc -l)
+        echo "🔍 Found $baseline_count baseline images"
+        if [ "$baseline_count" -lt 30 ]; then
+          echo "❌ Error: Expected at least 30 baseline images, found $baseline_count"
+          echo "Baseline images should be committed to the repository as ground truth."
+          exit 1
+        fi
+
+    - name: Run visual regression tests
+      run: |
+        echo "🔍 Running visual regression tests against ground truth baselines..."
+        # Using 0.89 threshold to account for cross-platform rendering differences (macOS vs Linux)
+        uv run python tests/visual/visual_test_runner.py --threshold 0.89
+
+    - name: Upload visual diff artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-regression-diffs
+        path: tests/visual/artifacts/
+        retention-days: 30
+
+    # Note: PR comment action removed due to permission issues
+    # Visual test results can be seen in the job output and artifacts

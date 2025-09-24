@@ -151,6 +151,19 @@
             max-height: none;
             width: auto;
             height: auto;
+            background-color: white !important;
+        }
+
+        /* Force white background for Graphviz SVGs */
+        .diagram-content svg polygon[fill="transparent"],
+        .diagram-content svg polygon[fill="none"],
+        .diagram-content svg rect[fill="none"] {
+            fill: white !important;
+        }
+
+        /* Ensure text is always visible */
+        .diagram-content svg text {
+            fill: black !important;
         }
 
         .error-message {
